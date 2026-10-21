@@ -1,10 +1,23 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
+import timesFont from 'pdfmake/build/standard-fonts/Times';
+import helveticaFont from 'pdfmake/build/standard-fonts/Helvetica';
 
-// Configure vfs safely for modern bundlers (Vite/ESM)
+// Configure vfs and standard rich fonts safely for Vite/ESM
 const vfs = (pdfFonts as any)?.pdfMake?.vfs || (pdfFonts as any)?.default?.pdfMake?.vfs || pdfFonts;
 if (vfs) {
     (pdfMake as any).vfs = vfs;
+}
+
+if ((pdfMake as any).addFontContainer) {
+    try {
+        const resolvedTimes = (timesFont as any)?.default || timesFont;
+        const resolvedHelvetica = (helveticaFont as any)?.default || helveticaFont;
+        if (resolvedTimes) (pdfMake as any).addFontContainer(resolvedTimes);
+        if (resolvedHelvetica) (pdfMake as any).addFontContainer(resolvedHelvetica);
+    } catch {
+        // Fallback to built-in Roboto if standard font container registration fails
+    }
 }
 
 export interface StudentMarkItem {
@@ -105,6 +118,7 @@ export interface BatchReportCardData {
 export interface BatchPdfOptions {
     useLetterheadImage: boolean;
     style: 'minimal' | 'comprehensive';
+    fontPairing?: 'academic_serif' | 'modern_sans' | 'classic_formal';
     topMargin?: number;
     bottomMargin?: number;
     leftMargin?: number;
@@ -132,6 +146,13 @@ export function generateClassBatchReportPdf(
     const ca2Label = data.exam?.ca2_label || 'CA 2';
     const ca3Label = data.exam?.ca3_label || 'CA 3';
 
+    // Rich Typography & Font Styling Configuration
+    const fontPairing = options.fontPairing || 'academic_serif';
+    const titleFont = fontPairing === 'modern_sans' ? 'Helvetica' : 'Times';
+    const bodyFont = fontPairing === 'classic_formal' ? 'Times' : 'Helvetica';
+    const studentNameFont = fontPairing === 'modern_sans' ? 'Helvetica' : 'Times';
+    const remarksFont = fontPairing === 'modern_sans' ? 'Helvetica' : 'Times';
+
     const pdfContent: any[] = [];
     const totalStudentsInClass = data.class_total_students || data.students.length;
     const totalStudentsInSection = data.section_total_students || totalStudentsInClass;
@@ -142,7 +163,7 @@ export function generateClassBatchReportPdf(
 
         if (options.style === 'comprehensive') {
             // =========================================================================
-            // COMPREHENSIVE STYLE
+            // COMPREHENSIVE STYLE (Full Bio-Data, Side-by-Side Standings, Signatures)
             // =========================================================================
 
             // 1. Institutional Header (If not using pre-printed letterhead)
@@ -159,8 +180,8 @@ export function generateClassBatchReportPdf(
 
                 headerCols.push({
                     stack: [
-                        { text: data.school.name.toUpperCase(), fontSize: 13.5, bold: true, color: '#0f172a' },
-                        data.school.motto ? { text: `"${data.school.motto}"`, fontSize: 8, italics: true, color: '#475569', margin: [0, 1, 0, 1] } : {},
+                        { text: data.school.name.toUpperCase(), font: titleFont, fontSize: 13.5, bold: true, color: '#0f172a', characterSpacing: 0.5 },
+                        data.school.motto ? { text: `"${data.school.motto}"`, font: titleFont, fontSize: 8, italics: true, color: '#475569', margin: [0, 1, 0, 1] } : {},
                         {
                             text: [
                                 data.school.address ? `${data.school.address} ` : '',
@@ -192,10 +213,12 @@ export function generateClassBatchReportPdf(
             // 2. Official Title Banner (Report Title = 13.5pt, clean with no background fill or border)
             pdfContent.push({
                 text: 'OFFICIAL TERMINAL EXAMINATION REPORT CARD',
+                font: titleFont,
                 fontSize: 13.5,
                 bold: true,
                 alignment: 'center',
                 color: '#0f172a',
+                characterSpacing: titleFont === 'Times' ? 0.75 : 0.5,
                 margin: [0, 0, 0, 8],
             });
 
@@ -208,7 +231,7 @@ export function generateClassBatchReportPdf(
                             {
                                 stack: [
                                     { text: 'STUDENT FULL NAME', fontSize: 7, bold: true, color: '#64748b' },
-                                    { text: student.student_name.toUpperCase(), fontSize: 11, bold: true, color: '#0f172a', margin: [0, 1, 0, 0] },
+                                    { text: student.student_name.toUpperCase(), font: studentNameFont, fontSize: 11, bold: true, color: '#0f172a', margin: [0, 1, 0, 0] },
                                 ],
                             },
                             {
@@ -354,6 +377,7 @@ export function generateClassBatchReportPdf(
                         [
                             {
                                 text: 'TERMINAL ACADEMIC STANDING',
+                                font: titleFont,
                                 fontSize: 9,
                                 bold: true,
                                 color: '#1e293b',
@@ -416,6 +440,7 @@ export function generateClassBatchReportPdf(
                         [
                             {
                                 text: 'ATTENDANCE & PUNCTUALITY PROFILE',
+                                font: titleFont,
                                 fontSize: 9,
                                 bold: true,
                                 color: '#1e293b',
@@ -530,7 +555,7 @@ export function generateClassBatchReportPdf(
             }
             principalSealStack.push(
                 { text: '_______________________________', fontSize: 8, alignment: 'center', color: '#64748b' },
-                { text: (data.school.principal_name || 'The Principal').toUpperCase(), fontSize: 9, bold: true, alignment: 'center', color: '#0f172a', margin: [0, 3, 0, 1] },
+                { text: (data.school.principal_name || 'The Principal').toUpperCase(), font: titleFont, fontSize: 9, bold: true, alignment: 'center', color: '#0f172a', margin: [0, 3, 0, 1] },
                 { text: 'Principal / Head of School', fontSize: 9, color: '#475569', alignment: 'center' }
             );
 
@@ -544,14 +569,14 @@ export function generateClassBatchReportPdf(
                                     {
                                         text: [
                                             { text: "FORM MASTER / CLASS TEACHER'S REMARK:\n", bold: true, fontSize: 8.5, color: '#334155' },
-                                            { text: student.remarks.teacher || 'Satisfactory academic performance and character.', fontSize: 9, italics: true, color: '#0f172a' },
+                                            { text: student.remarks.teacher || 'Satisfactory academic performance and character.', font: remarksFont, fontSize: 9, italics: true, color: '#0f172a' },
                                         ],
                                         margin: [0, 0, 0, 6],
                                     },
                                     {
                                         text: [
                                             { text: "PRINCIPAL'S OFFICIAL RECOMMENDATION:\n", bold: true, fontSize: 8.5, color: '#334155' },
-                                            { text: student.remarks.principal || 'Promising results shown. Keep striving for academic excellence.', fontSize: 9, italics: true, color: '#0f172a' },
+                                            { text: student.remarks.principal || 'Promising results shown. Keep striving for academic excellence.', font: remarksFont, fontSize: 9, italics: true, color: '#0f172a' },
                                         ],
                                     },
                                 ],
@@ -580,16 +605,18 @@ export function generateClassBatchReportPdf(
             pdfContent.push(
                 {
                     text: 'STUDENT TERMINAL REPORT CARD',
+                    font: titleFont,
                     style: 'mainTitle',
                     fontSize: 13.5,
                     bold: true,
                     alignment: 'center',
+                    characterSpacing: titleFont === 'Times' ? 0.75 : 0.5,
                     margin: [0, 0, 0, 10],
                 },
                 {
                     columns: [
                         [
-                            { text: `STUDENT NAME: ${student.student_name.toUpperCase()}`, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
+                            { text: `STUDENT NAME: ${student.student_name.toUpperCase()}`, font: studentNameFont, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
                             { text: `ADMISSION NUMBER: ${student.admission_number}`, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
                             { text: `CLASS & SECTION: ${data.class_name} - ${data.section_name}`, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
                         ],
@@ -644,7 +671,7 @@ export function generateClassBatchReportPdf(
                     { text: subject.exam_score.toString(), alignment: 'center', fontSize: 10 },
                     { text: subject.total_score.toString(), alignment: 'center', fontSize: 10, bold: true },
                     { text: subject.grade || '—', alignment: 'center', fontSize: 10, bold: true },
-                    { text: subject.remark || '—', alignment: 'center', fontSize: 9.5 }
+                    { text: subject.remark || '—', font: remarksFont, fontSize: 9.5, italics: true }
                 );
 
                 tableBody.push(row);
@@ -712,7 +739,7 @@ export function generateClassBatchReportPdf(
 
             minPrincipalStack.push(
                 { text: '__________________________________', fontSize: 8, alignment: 'right' },
-                { text: (data.school.principal_name || 'The Principal').toUpperCase(), fontSize: 9, bold: true, alignment: 'right', margin: [0, 3, 0, 1] },
+                { text: (data.school.principal_name || 'The Principal').toUpperCase(), font: titleFont, fontSize: 9, bold: true, alignment: 'right', margin: [0, 3, 0, 1] },
                 { text: 'Principal / Head of School', fontSize: 9, color: '#475569', alignment: 'right' }
             );
 
@@ -725,7 +752,7 @@ export function generateClassBatchReportPdf(
                                 {
                                     text: [
                                         { text: "FORM MASTER'S REMARK: ", bold: true, fontSize: 9 },
-                                        { text: student.remarks.teacher || 'Satisfactory academic performance.', fontSize: 9 },
+                                        { text: student.remarks.teacher || 'Satisfactory academic performance.', font: remarksFont, fontSize: 9, italics: true },
                                     ],
                                 },
                             ],
@@ -733,7 +760,7 @@ export function generateClassBatchReportPdf(
                                 {
                                     text: [
                                         { text: "PRINCIPAL'S REMARK: ", bold: true, fontSize: 9 },
-                                        { text: student.remarks.principal || 'Promising results shown. Keep striving for excellence.', fontSize: 9 },
+                                        { text: student.remarks.principal || 'Promising results shown. Keep striving for excellence.', font: remarksFont, fontSize: 9, italics: true },
                                     ],
                                 },
                             ],
@@ -775,6 +802,7 @@ export function generateClassBatchReportPdf(
         content: pdfContent,
         styles: {
             mainTitle: {
+                font: titleFont,
                 fontSize: 13.5,
                 bold: true,
                 color: '#0f172a',
@@ -798,6 +826,7 @@ export function generateClassBatchReportPdf(
             },
         },
         defaultStyle: {
+            font: bodyFont,
             fontSize: 9,
             color: '#0f172a',
             lineHeight: 1.15,

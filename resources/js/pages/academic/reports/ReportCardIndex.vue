@@ -157,7 +157,8 @@ const isFetchingBatch = ref(false);
 const isGeneratingPdf = ref(false);
 const batchData = ref<BatchReportCardData | null>(null);
 
-const pdfStyle = ref<'minimal' | 'comprehensive'>('minimal');
+const pdfStyle = ref<'minimal' | 'comprehensive'>('comprehensive');
+const fontPairing = ref<'academic_serif' | 'modern_sans' | 'classic_formal'>('academic_serif');
 const useLetterheadImage = ref(true);
 
 const openBatchModal = async () => {
@@ -194,6 +195,7 @@ const handleGeneratePdf = () => {
         generateClassBatchReportPdf(batchData.value, {
             useLetterheadImage: useLetterheadImage.value,
             style: pdfStyle.value,
+            fontPairing: fontPairing.value,
         });
         toast.success(`Generated batch report cards for ${batchData.value.students.length} students!`);
         isBatchModalOpen.value = false;
@@ -531,6 +533,54 @@ const handleGeneratePdf = () => {
                                         <div class="font-bold text-foreground text-xs">Comprehensive Style</div>
                                         <div class="text-[11px] text-muted-foreground leading-relaxed">
                                             Includes full attendance rate breakdown and class benchmark averages.
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Typography & Font Pairing Option -->
+                        <div class="space-y-2">
+                            <Label class="text-xs font-bold block">Typography & Font Styling</Label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <label
+                                    class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all"
+                                    :class="fontPairing === 'academic_serif' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted/30'"
+                                >
+                                    <input type="radio" v-model="fontPairing" value="academic_serif" class="mt-0.5 text-primary" />
+                                    <div class="space-y-0.5">
+                                        <div class="font-bold text-foreground text-xs flex items-center gap-1.5">
+                                            <span>Academic Serif</span>
+                                            <Badge variant="outline" class="text-[9px] px-1 py-0 h-4 border-primary/30 text-primary">Rich</Badge>
+                                        </div>
+                                        <div class="text-[11px] text-muted-foreground leading-relaxed">
+                                            Authoritative Times-Roman titles & remarks paired with clean Helvetica tabular scores.
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label
+                                    class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all"
+                                    :class="fontPairing === 'modern_sans' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted/30'"
+                                >
+                                    <input type="radio" v-model="fontPairing" value="modern_sans" class="mt-0.5 text-primary" />
+                                    <div class="space-y-0.5">
+                                        <div class="font-bold text-foreground text-xs">Modern Sans</div>
+                                        <div class="text-[11px] text-muted-foreground leading-relaxed">
+                                            Crisp Helvetica throughout, matching the web portal's contemporary aesthetic.
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label
+                                    class="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all"
+                                    :class="fontPairing === 'classic_formal' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border hover:bg-muted/30'"
+                                >
+                                    <input type="radio" v-model="fontPairing" value="classic_formal" class="mt-0.5 text-primary" />
+                                    <div class="space-y-0.5">
+                                        <div class="font-bold text-foreground text-xs">Classic Formal</div>
+                                        <div class="text-[11px] text-muted-foreground leading-relaxed">
+                                            Full collegiate serif typography across all headers, marks, and remarks.
                                         </div>
                                     </div>
                                 </label>
