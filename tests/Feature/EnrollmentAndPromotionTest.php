@@ -9,9 +9,12 @@ use App\Models\AcademicSession;
 use App\Models\AcademicTerm;
 use App\Models\DailyAttendance;
 use App\Models\Enrollment;
+use App\Models\Exam;
 use App\Models\SchoolClass;
 use App\Models\Section;
 use App\Models\Student;
+use App\Models\StudentMark;
+use App\Models\Subject;
 use App\Models\User;
 use Database\Seeders\StandardAcademicSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -502,5 +505,62 @@ class EnrollmentAndPromotionTest extends TestCase
             'section_id' => $targetSection->id,
             'status' => EnrollmentStatus::ACTIVE->value,
         ]);
+    }
+
+    public function test_promotion_index_computes_terminal_and_annual_performance_metrics_for_candidates(): void
+    {
+        $admin = User::where('username', 'superadmin')->firstOrFail();
+        $session = AcademicSession::where('is_current', true)->firstOrFail();
+        $class = SchoolClass::firstOrFail();
+        $section = Section::where('class_id', $class->id)->firstOrFail();
+        $subject = Subject::firstOrCreate(['name' => 'General Mathematics'], ['code' => 'MTH101', 'is_active' => true]);
+
+        // Terms 1, 2, and 3
+        $term1 = AcademicTerm::where('academic_session_id', $session->id)->where('term_number', 1)->first()
+            ?? AcademicTerm::create(['academic_session_id' => $session->id, 'name' => 'First Term', 'term_number' => 1, 'start_date' => '2026-09-01', 'end_date' => '2026-12-15', 'is_current' => false]);
+        $term2 = AcademicTerm::where('academic_session_id', $session->id)->where('term_number', 2)->first()
+            ?? AcademicTerm::create(['academic_session_id' => $session->id, 'name' => 'Second Term', 'term_number' => 2, 'start_date' => '2027-01-10', 'end_date' => '2027-04-10', 'is_current' => false]);
+        $term3 = AcademicTerm::where('academic_session_id', $session->id)->where('term_number', 3)->first()
+            ?? AcademicTerm::create(['academic_session_id' => $session->id, 'name' => 'Third Term', 'term_number' => 3, 'start_date' => '2027-05-01', 'end_date' => '2027-07-25', 'is_current' => true]);
+
+        // Exams for each term
+        $exam1 = Exam::create(['academic_session_id' => $session->id, 'academic_term_id' => $term1->id, 'name' => 'First Term Exam', 'max_exam' => 100, 'ca_count' => 0]);
+        $exam2 = Exam::create(['academic_session_id' => $session->id, 'academic_term_id' => $term2->id, 'name' => 'Second Term Exam', 'max_exam' => 100, 'ca_count' => 0]);
+        $exam3 = Exam::create(['academic_session_id' => $session->id, 'academic_term_id' => $term3->id, 'name' => 'Third Term Exam', 'max_exam' => 100, 'ca_count' => 0]);
+
+        $student = Student::create([
+            'user_id' => User::factory()->create(['role' => UserRole::STUDENT])->id,
+            'admission_number' => 'GSSS26-TESTPERF',
+            'admission_date' => '2026-09-01',
+        ]);
+
+        $enrollment = Enrollment::create([
+            'academic_session_id' => $session->id,
+            'student_id' => $student->id,
+            'class_id' => $class->id,
+            'section_id' => $section->id,
+            'status' => EnrollmentStatus::ACTIVE,
+        ]);
+
+        // Record marks: Term 1: 70%, Term 2: 80%, Term 3: 90% -> Mean: 80%
+        StudentMark::create(['enrollment_id' => $enrollment->id, 'subject_id' => $subject->id, 'exam_id' => $exam1->id, 'exam_score' => 70, 'ca1' => 0, 'total_score' => 70]);
+        StudentMark::create(['enrollment_id' => $enrollment->id, 'subject_id' => $subject->id, 'exam_id' => $exam2->id, 'exam_score' => 80, 'ca1' => 0, 'total_score' => 80]);
+        StudentMark::create(['enrollment_id' => $enrollment->id, 'subject_id' => $subject->id, 'exam_id' => $exam3->id, 'exam_score' => 90, 'ca1' => 0, 'total_score' => 90]);
+
+        $response = $this->actingAs($admin)->get(route('academic.promotions.index', [
+            'session_id' => $session->id,
+            'class_id' => $class->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('academic/promotions/Index')
+            ->has('studentPerformanceMap')
+            ->where('studentPerformanceMap.'.$student->id.'.term1_avg', 70)
+            ->where('studentPerformanceMap.'.$student->id.'.term2_avg', 80)
+            ->where('studentPerformanceMap.'.$student->id.'.term3_avg', 90)
+            ->where('studentPerformanceMap.'.$student->id.'.annual_avg', 80)
+            ->where('studentPerformanceMap.'.$student->id.'.terms_sat_count', 3)
+        );
     }
 }

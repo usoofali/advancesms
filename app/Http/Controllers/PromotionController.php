@@ -6,6 +6,7 @@ use App\Enums\EnrollmentStatus;
 use App\Http\Requests\PromoteStudentsRequest;
 use App\Models\AcademicSession;
 use App\Models\Enrollment;
+use App\Models\Grade;
 use App\Models\SchoolClass;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
@@ -33,8 +34,38 @@ class PromotionController extends Controller
         $defaultSessionId = $activeSession ? $activeSession->id : 0;
         $selectedSessionId = (int) $request->input('session_id', $defaultSessionId);
 
-        $enrollments = Enrollment::query()
+        $classes = SchoolClass::query()
+            ->with(['sections:id,class_id,name,capacity'])
+            ->orderBy('level_order')
+            ->get(['id', 'name', 'stage', 'level_order']);
+
+        $firstClass = $classes->first();
+        $selectedClassId = (int) $request->input('class_id', $firstClass ? $firstClass->id : 0);
+        $selectedSectionId = (int) $request->input('section_id', 0);
+
+        // Whole-session statistics via high-speed conditional SQL aggregation
+        $statsRaw = Enrollment::where('academic_session_id', $selectedSessionId)
+            ->selectRaw("
+                COUNT(*) as total_in_session,
+                SUM(status = 'active') as active_count,
+                SUM(status = 'promoted') as promoted_count,
+                SUM(status = 'repeated') as repeated_count,
+                SUM(status = 'graduated') as graduated_count
+            ")
+            ->first();
+
+        $stats = [
+            'total_in_session' => (int) ($statsRaw->total_in_session ?? 0),
+            'active_count' => (int) ($statsRaw->active_count ?? 0),
+            'promoted_count' => (int) ($statsRaw->promoted_count ?? 0),
+            'repeated_count' => (int) ($statsRaw->repeated_count ?? 0),
+            'graduated_count' => (int) ($statsRaw->graduated_count ?? 0),
+        ];
+
+        // Fetch candidate enrollments scoped to selected class & section
+        $enrollmentsQuery = Enrollment::query()
             ->where('academic_session_id', $selectedSessionId)
+            ->where('class_id', $selectedClassId)
             ->with([
                 'student:id,user_id,admission_number',
                 'student.user:id,name',
@@ -50,29 +81,95 @@ class PromotionController extends Controller
                 'previousEnrollment.section:id,name',
                 'previousEnrollment.academicSession:id,name',
             ])
-            ->orderBy('class_id')
             ->orderBy('section_id')
-            ->orderBy('roll_number')
-            ->get();
+            ->orderBy('roll_number');
 
-        $classes = SchoolClass::query()
-            ->with(['sections:id,class_id,name,capacity'])
-            ->orderBy('level_order')
-            ->get(['id', 'name', 'stage', 'level_order']);
+        if ($selectedSectionId > 0) {
+            $enrollmentsQuery->where('section_id', $selectedSectionId);
+        }
 
-        $stats = [
-            'total_in_session' => $enrollments->count(),
-            'active_count' => $enrollments->where('status', EnrollmentStatus::ACTIVE)->count(),
-            'promoted_count' => $enrollments->where('status', EnrollmentStatus::PROMOTED)->count(),
-            'repeated_count' => $enrollments->where('status', EnrollmentStatus::REPEATED)->count(),
-            'graduated_count' => $enrollments->where('status', EnrollmentStatus::GRADUATED)->count(),
-        ];
+        $enrollments = $enrollmentsQuery->get();
+
+        // High-speed MySQL aggregation for terminal performance metrics (Term 1, Term 2, Term 3 & Annual Cumulative)
+        $studentPerformanceMap = [];
+
+        if ($enrollments->isNotEmpty()) {
+            $performanceQuery = DB::table('enrollments as e')
+                ->join('student_marks as sm', 'sm.enrollment_id', '=', 'e.id')
+                ->join('exams as ex', 'sm.exam_id', '=', 'ex.id')
+                ->join('academic_terms as t', 'ex.academic_term_id', '=', 't.id')
+                ->where('e.academic_session_id', $selectedSessionId)
+                ->where('e.class_id', $selectedClassId);
+
+            if ($selectedSectionId > 0) {
+                $performanceQuery->where('e.section_id', $selectedSectionId);
+            }
+
+            $termAverages = $performanceQuery
+                ->select([
+                    'e.id as enrollment_id',
+                    'e.student_id',
+                    't.term_number',
+                    DB::raw('ROUND(AVG(sm.total_score), 1) as term_avg'),
+                    DB::raw('COUNT(sm.id) as subjects_count'),
+                ])
+                ->groupBy('e.id', 'e.student_id', 't.term_number')
+                ->get()
+                ->groupBy('student_id');
+
+            $allGrades = Grade::orderBy('mark_from', 'desc')->get();
+
+            foreach ($enrollments as $enrollment) {
+                $terms = $termAverages->get($enrollment->student_id, collect());
+
+                $term1Avg = null;
+                $term2Avg = null;
+                $term3Avg = null;
+                $validTermAvgs = [];
+
+                foreach ($terms as $t) {
+                    $avgVal = (float) $t->term_avg;
+                    if ($t->term_number == 1) {
+                        $term1Avg = $avgVal;
+                        $validTermAvgs[] = $avgVal;
+                    } elseif ($t->term_number == 2) {
+                        $term2Avg = $avgVal;
+                        $validTermAvgs[] = $avgVal;
+                    } elseif ($t->term_number == 3) {
+                        $term3Avg = $avgVal;
+                        $validTermAvgs[] = $avgVal;
+                    }
+                }
+
+                $annualAvg = ! empty($validTermAvgs)
+                    ? round(array_sum($validTermAvgs) / count($validTermAvgs), 1)
+                    : null;
+
+                $gradeLetter = null;
+                if ($annualAvg !== null) {
+                    $matchedGrade = $allGrades->first(fn ($g) => $annualAvg >= (float) $g->mark_from && $annualAvg <= (float) $g->mark_to);
+                    $gradeLetter = $matchedGrade ? $matchedGrade->name : ($annualAvg >= 50 ? 'P' : 'F');
+                }
+
+                $studentPerformanceMap[$enrollment->student_id] = [
+                    'term1_avg' => $term1Avg,
+                    'term2_avg' => $term2Avg,
+                    'term3_avg' => $term3Avg,
+                    'annual_avg' => $annualAvg,
+                    'grade' => $gradeLetter,
+                    'terms_sat_count' => count($validTermAvgs),
+                ];
+            }
+        }
 
         return Inertia::render('academic/promotions/Index', [
             'sessions' => $sessions,
             'selectedSessionId' => $selectedSessionId,
             'classes' => $classes,
+            'selectedClassId' => $selectedClassId,
+            'selectedSectionId' => $selectedSectionId,
             'enrollments' => $enrollments,
+            'studentPerformanceMap' => $studentPerformanceMap,
             'stats' => $stats,
         ]);
     }

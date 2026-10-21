@@ -91,11 +91,23 @@ interface Stats {
     graduated_count: number;
 }
 
+interface StudentPerformance {
+    term1_avg: number | null;
+    term2_avg: number | null;
+    term3_avg: number | null;
+    annual_avg: number | null;
+    grade: string | null;
+    terms_sat_count: number;
+}
+
 const props = defineProps<{
     sessions: AcademicSession[];
     selectedSessionId: number;
     classes: SchoolClass[];
+    selectedClassId: number;
+    selectedSectionId: number;
     enrollments: Enrollment[];
+    studentPerformanceMap: Record<number, StudentPerformance>;
     stats: Stats;
 }>();
 
@@ -119,18 +131,57 @@ const promotionForm = useForm({
 });
 
 // Source Class & Section Filter
-const promoSourceClassId = ref<string>('');
-const promoSourceSectionId = ref<string>('');
+const promoSourceClassId = ref<string>(props.selectedClassId ? String(props.selectedClassId) : '');
+const promoSourceSectionId = ref<string>(props.selectedSectionId ? String(props.selectedSectionId) : '');
+
+watch(
+    () => props.selectedClassId,
+    (val) => {
+        promoSourceClassId.value = val ? String(val) : '';
+    }
+);
+
+watch(
+    () => props.selectedSectionId,
+    (val) => {
+        promoSourceSectionId.value = val ? String(val) : '';
+    }
+);
+
+const onSourceClassChange = () => {
+    promoSourceSectionId.value = '';
+    promotionForm.student_ids = [];
+    router.get(
+        academicPromotionsIndex.url({
+            query: {
+                session_id: props.selectedSessionId,
+                class_id: promoSourceClassId.value || undefined,
+            },
+        }),
+        {},
+        { preserveState: true, preserveScroll: true }
+    );
+};
+
+const onSourceSectionChange = () => {
+    promotionForm.student_ids = [];
+    router.get(
+        academicPromotionsIndex.url({
+            query: {
+                session_id: props.selectedSessionId,
+                class_id: promoSourceClassId.value || undefined,
+                section_id: promoSourceSectionId.value || undefined,
+            },
+        }),
+        {},
+        { preserveState: true, preserveScroll: true }
+    );
+};
 
 const availableSourceSections = computed(() => {
     if (!promoSourceClassId.value) return [];
     const cls = props.classes.find((c) => c.id === Number(promoSourceClassId.value));
     return cls?.sections ?? [];
-});
-
-watch(promoSourceClassId, () => {
-    promoSourceSectionId.value = '';
-    promotionForm.student_ids = [];
 });
 
 const candidateTab = ref<'active' | 'processed' | 'all'>('active');
@@ -142,19 +193,9 @@ const getProgressionDestination = (enrollment: Enrollment): Enrollment | null =>
     ) ?? null;
 };
 
-// All Candidates Enrolled in Source Class & Session
+// All Candidates Enrolled in Source Class & Session (Filtered server-side)
 const allSourceCandidates = computed(() => {
-    if (!promoSourceClassId.value) return [];
-
-    return props.enrollments.filter((e) => {
-        const matchesClass = e.class_id === Number(promoSourceClassId.value);
-        const matchesSection =
-            !promoSourceSectionId.value ||
-            e.section_id === Number(promoSourceSectionId.value);
-        const matchesSession = e.academic_session_id === Number(props.selectedSessionId);
-
-        return matchesClass && matchesSection && matchesSession;
-    });
+    return props.enrollments;
 });
 
 const activeCandidates = computed(() => {
@@ -169,6 +210,38 @@ const displayedCandidates = computed(() => {
     if (candidateTab.value === 'active') return activeCandidates.value;
     if (candidateTab.value === 'processed') return processedCandidates.value;
     return allSourceCandidates.value;
+});
+
+// Pass Benchmark & Performance Decision Support
+const passBenchmark = ref<number>(50);
+
+const getPerformance = (studentId: number): StudentPerformance | undefined => {
+    return props.studentPerformanceMap?.[studentId];
+};
+
+const isEligibleForPromotion = (studentId: number): boolean => {
+    const perf = getPerformance(studentId);
+    if (!perf || perf.annual_avg === null) return true;
+    return perf.annual_avg >= passBenchmark.value;
+};
+
+const selectRecommended = () => {
+    if (promotionForm.action === 'repeat') {
+        promotionForm.student_ids = activeCandidates.value
+            .filter((c) => !isEligibleForPromotion(c.student_id))
+            .map((c) => c.student_id);
+    } else {
+        promotionForm.student_ids = activeCandidates.value
+            .filter((c) => isEligibleForPromotion(c.student_id))
+            .map((c) => c.student_id);
+    }
+};
+
+const recommendedCount = computed(() => {
+    if (promotionForm.action === 'repeat') {
+        return activeCandidates.value.filter((c) => !isEligibleForPromotion(c.student_id)).length;
+    }
+    return activeCandidates.value.filter((c) => isEligibleForPromotion(c.student_id)).length;
 });
 
 const isAllSelected = computed(() => {
@@ -228,7 +301,7 @@ watch(promoSourceClassId, (sourceId) => {
     } else if (promotionForm.action === 'repeat' && sourceId) {
         promotionForm.target_class_id = Number(sourceId);
     }
-});
+}, { immediate: true });
 
 watch(
     () => promotionForm.action,
@@ -495,6 +568,7 @@ const confirmAndExecutePromotion = () => {
                                 <Label class="text-xs text-muted-foreground font-medium">Source Class <span class="text-destructive">*</span></Label>
                                 <select
                                     v-model="promoSourceClassId"
+                                    @change="onSourceClassChange"
                                     class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs font-medium"
                                 >
                                     <option value="">Select Class to promote...</option>
@@ -508,6 +582,7 @@ const confirmAndExecutePromotion = () => {
                                 <Label class="text-xs text-muted-foreground font-medium">Source Section (Optional Filter)</Label>
                                 <select
                                     v-model="promoSourceSectionId"
+                                    @change="onSourceSectionChange"
                                     class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs font-medium"
                                     :disabled="!promoSourceClassId"
                                 >
@@ -592,8 +667,22 @@ const confirmAndExecutePromotion = () => {
                             </p>
                         </div>
 
-                        <!-- Candidate Filter Tabs & Select All -->
+                        <!-- Candidate Filter Tabs & Benchmark Controls -->
                         <div class="flex flex-wrap items-center gap-2">
+                            <!-- Benchmark Input -->
+                            <div class="flex items-center gap-1.5 text-xs bg-muted/40 border border-border/60 rounded-md px-2.5 py-1">
+                                <span class="text-muted-foreground font-medium">Pass Benchmark:</span>
+                                <input
+                                    v-model.number="passBenchmark"
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    class="w-12 h-6 text-center font-bold text-xs rounded border border-input bg-background focus:ring-1 focus:ring-primary"
+                                />
+                                <span class="text-muted-foreground">%</span>
+                            </div>
+
                             <div class="inline-flex rounded-lg border border-border bg-muted/40 p-1 text-xs">
                                 <button
                                     type="button"
@@ -633,6 +722,19 @@ const confirmAndExecutePromotion = () => {
                                 </button>
                             </div>
 
+                            <!-- Smart Selection Button -->
+                            <Button
+                                v-if="activeCandidates.length > 0"
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                class="h-8 text-xs font-semibold gap-1.5"
+                                @click="selectRecommended"
+                            >
+                                <CheckCircle2 class="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                <span>{{ promotionForm.action === 'repeat' ? `Select Repeat Candidates (${recommendedCount})` : `Select Passing (${recommendedCount})` }}</span>
+                            </Button>
+
                             <Button
                                 v-if="activeCandidates.length > 0"
                                 type="button"
@@ -641,7 +743,7 @@ const confirmAndExecutePromotion = () => {
                                 class="h-8 text-xs"
                                 @click="toggleSelectAll"
                             >
-                                {{ isAllSelected ? 'Deselect All' : 'Select All Eligible' }}
+                                {{ isAllSelected ? 'Deselect All' : 'Select All' }}
                             </Button>
                         </div>
                     </div>
@@ -650,21 +752,24 @@ const confirmAndExecutePromotion = () => {
                     <div class="border border-border/60 rounded-md overflow-hidden">
                         <div class="max-h-96 overflow-y-auto">
                             <table class="w-full text-left text-sm">
-                                <thead class="bg-muted/50 border-b border-border/60 text-xs font-semibold text-muted-foreground uppercase sticky top-0">
+                                <thead class="bg-muted/50 border-b border-border/60 text-xs font-semibold text-muted-foreground uppercase sticky top-0 z-10">
                                     <tr>
-                                        <th class="w-12 px-4 py-3 text-center">
+                                        <th class="w-10 px-3 py-2.5 text-center">
                                             <Checkbox
                                                 :checked="isAllSelected"
                                                 :disabled="activeCandidates.length === 0"
                                                 @update:checked="toggleSelectAll"
                                             />
                                         </th>
-                                        <th class="px-4 py-3">Admission #</th>
-                                        <th class="px-4 py-3">Student Name</th>
-                                        <th class="px-4 py-3">Current Class</th>
-                                        <th class="px-4 py-3">Current Section</th>
-                                        <th class="px-4 py-3">Status in {{ currentSession?.name }}</th>
-                                        <th class="px-4 py-3">Progression Outcome</th>
+                                        <th class="px-3 py-2.5 text-xs">Admission #</th>
+                                        <th class="px-3 py-2.5 text-xs">Student Name</th>
+                                        <th class="px-2 py-2.5 text-center text-xs">Term 1</th>
+                                        <th class="px-2 py-2.5 text-center text-xs">Term 2</th>
+                                        <th class="px-2 py-2.5 text-center text-xs">Term 3</th>
+                                        <th class="px-3 py-2.5 text-center text-xs">Annual Mean</th>
+                                        <th class="px-3 py-2.5 text-center text-xs">Recommendation</th>
+                                        <th class="px-3 py-2.5 text-xs">Status</th>
+                                        <th class="px-3 py-2.5 text-xs">Progression Outcome</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-border/40">
@@ -679,7 +784,7 @@ const confirmAndExecutePromotion = () => {
                                         ]"
                                         @click="candidate.status === 'active' ? toggleCandidate(candidate) : null"
                                     >
-                                        <td class="w-12 px-4 py-3 text-center" @click.stop>
+                                        <td class="w-10 px-3 py-2.5 text-center" @click.stop>
                                             <Checkbox
                                                 v-if="candidate.status === 'active'"
                                                 :checked="promotionForm.student_ids.includes(candidate.student_id)"
@@ -689,23 +794,82 @@ const confirmAndExecutePromotion = () => {
                                                 <CheckCircle2 class="size-4 text-emerald-600 dark:text-emerald-400" />
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3 font-mono font-medium text-xs text-primary">
+                                        <td class="px-3 py-2.5 font-mono font-medium text-xs text-primary">
                                             {{ candidate.student?.admission_number }}
                                         </td>
-                                        <td class="px-4 py-3 font-medium text-foreground">
-                                            {{ candidate.student?.user?.name }}
+                                        <td class="px-3 py-2.5 font-medium text-foreground text-xs">
+                                            <div class="flex items-center gap-1.5">
+                                                <span>{{ candidate.student?.user?.name }}</span>
+                                                <Badge variant="outline" class="text-[10px] font-normal px-1 py-0">
+                                                    Sec {{ candidate.section?.name }}
+                                                </Badge>
+                                            </div>
                                         </td>
-                                        <td class="px-4 py-3">
-                                            <span class="font-medium text-foreground text-xs">
-                                                {{ candidate.school_class?.name ?? '—' }}
+                                        <!-- Term 1 -->
+                                        <td class="px-2 py-2.5 text-center font-mono text-xs">
+                                            <span
+                                                v-if="getPerformance(candidate.student_id)?.term1_avg !== null && getPerformance(candidate.student_id)?.term1_avg !== undefined"
+                                                :class="(getPerformance(candidate.student_id)?.term1_avg ?? 0) >= passBenchmark ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-semibold'"
+                                            >
+                                                {{ getPerformance(candidate.student_id)?.term1_avg }}%
                                             </span>
+                                            <span v-else class="text-muted-foreground/60">—</span>
                                         </td>
-                                        <td class="px-4 py-3">
-                                            <Badge variant="outline" class="text-xs font-normal">
-                                                Section {{ candidate.section?.name }}
-                                            </Badge>
+                                        <!-- Term 2 -->
+                                        <td class="px-2 py-2.5 text-center font-mono text-xs">
+                                            <span
+                                                v-if="getPerformance(candidate.student_id)?.term2_avg !== null && getPerformance(candidate.student_id)?.term2_avg !== undefined"
+                                                :class="(getPerformance(candidate.student_id)?.term2_avg ?? 0) >= passBenchmark ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-semibold'"
+                                            >
+                                                {{ getPerformance(candidate.student_id)?.term2_avg }}%
+                                            </span>
+                                            <span v-else class="text-muted-foreground/60">—</span>
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <!-- Term 3 -->
+                                        <td class="px-2 py-2.5 text-center font-mono text-xs">
+                                            <span
+                                                v-if="getPerformance(candidate.student_id)?.term3_avg !== null && getPerformance(candidate.student_id)?.term3_avg !== undefined"
+                                                :class="(getPerformance(candidate.student_id)?.term3_avg ?? 0) >= passBenchmark ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-rose-600 dark:text-rose-400 font-semibold'"
+                                            >
+                                                {{ getPerformance(candidate.student_id)?.term3_avg }}%
+                                            </span>
+                                            <span v-else class="text-muted-foreground/60">—</span>
+                                        </td>
+                                        <!-- Annual Mean & Grade -->
+                                        <td class="px-3 py-2.5 text-center font-mono text-xs">
+                                            <div
+                                                v-if="getPerformance(candidate.student_id)?.annual_avg !== null && getPerformance(candidate.student_id)?.annual_avg !== undefined"
+                                                class="inline-flex items-center gap-1 font-bold"
+                                            >
+                                                <span :class="(getPerformance(candidate.student_id)?.annual_avg ?? 0) >= passBenchmark ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                                                    {{ getPerformance(candidate.student_id)?.annual_avg }}%
+                                                </span>
+                                                <Badge variant="outline" class="text-[10px] px-1 py-0 font-mono font-bold">
+                                                    {{ getPerformance(candidate.student_id)?.grade || '—' }}
+                                                </Badge>
+                                            </div>
+                                            <span v-else class="text-xs text-muted-foreground/60 italic">No marks</span>
+                                        </td>
+                                        <!-- Decision Recommendation Badge -->
+                                        <td class="px-3 py-2.5 text-center text-xs">
+                                            <template v-if="getPerformance(candidate.student_id)?.annual_avg !== null && getPerformance(candidate.student_id)?.annual_avg !== undefined">
+                                                <Badge
+                                                    v-if="isEligibleForPromotion(candidate.student_id)"
+                                                    class="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300/50 text-[10px] py-0 font-semibold"
+                                                >
+                                                    ● Promote
+                                                </Badge>
+                                                <Badge
+                                                    v-else
+                                                    class="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300/50 text-[10px] py-0 font-semibold"
+                                                >
+                                                    ● Repeat
+                                                </Badge>
+                                            </template>
+                                            <span v-else class="text-[10px] text-muted-foreground italic">No Marks</span>
+                                        </td>
+                                        <!-- Status in Session -->
+                                        <td class="px-3 py-2.5 text-xs">
                                             <Badge
                                                 :class="[
                                                     'text-xs capitalize font-medium',
@@ -718,7 +882,8 @@ const confirmAndExecutePromotion = () => {
                                                 {{ candidate.status }}
                                             </Badge>
                                         </td>
-                                        <td class="px-4 py-3 text-xs">
+                                        <!-- Progression Outcome -->
+                                        <td class="px-3 py-2.5 text-xs">
                                             <div v-if="getProgressionDestination(candidate)" class="flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400">
                                                 <TrendingUp class="size-3.5 shrink-0" />
                                                 <span>
@@ -737,7 +902,7 @@ const confirmAndExecutePromotion = () => {
                                     </tr>
 
                                     <tr v-if="displayedCandidates.length === 0">
-                                        <td colspan="7" class="px-6 py-8 text-center text-muted-foreground">
+                                        <td colspan="10" class="px-6 py-8 text-center text-muted-foreground">
                                             <div v-if="!promoSourceClassId" class="text-xs">
                                                 Please select a source class above to load student candidates.
                                             </div>
