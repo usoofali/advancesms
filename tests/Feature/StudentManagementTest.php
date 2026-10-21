@@ -89,7 +89,7 @@ class StudentManagementTest extends TestCase
 
         $student = Student::where('admission_number', 'YUM-SA/0001')->first();
         $this->assertNotNull($student);
-        $this->assertSame('Amina Suleiman', $student->user->name);
+        $this->assertSame('AMINA SULEIMAN', $student->user->name);
         $this->assertSame('yum-sa0001@sms.com', $student->user->email);
         $this->assertSame('yum-sa0001', $student->user->username);
         $this->assertTrue(Hash::check('12345678', $student->user->password));
@@ -143,7 +143,7 @@ class StudentManagementTest extends TestCase
         $user = $student->user;
 
         $this->assertNotNull($user);
-        $this->assertSame('Maryam Aliyu', $user->name);
+        $this->assertSame('MARYAM ALIYU', $user->name);
         $this->assertSame(Gender::FEMALE, $user->gender);
         $this->assertSame(UserRole::STUDENT, $user->role);
         $this->assertTrue(Hash::check('StudentPass123#', $user->password));
@@ -256,7 +256,7 @@ class StudentManagementTest extends TestCase
         ]);
 
         $user->refresh();
-        $this->assertSame('Suleiman Mustapha', $user->name);
+        $this->assertSame('SULEIMAN MUSTAPHA', $user->name);
         $this->assertFalse((bool) $user->is_active);
     }
 

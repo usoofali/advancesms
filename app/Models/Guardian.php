@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,18 @@ class Guardian extends Model
         'address',
         'occupation',
     ];
+
+    /**
+     * Mutator to guarantee uppercase guardian name.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value))) : null,
+        );
+    }
 
     /**
      * @return BelongsTo<User, $this>

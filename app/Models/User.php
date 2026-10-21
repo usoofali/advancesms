@@ -103,6 +103,54 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
+     * Mutator to guarantee uppercase name.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value))) : null,
+        );
+    }
+
+    /**
+     * Mutator to guarantee uppercase first name.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function firstName(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value))) : null,
+        );
+    }
+
+    /**
+     * Mutator to guarantee uppercase middle name.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function middleName(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value))) : null,
+        );
+    }
+
+    /**
+     * Mutator to guarantee uppercase last name.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function lastName(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value))) : null,
+        );
+    }
+
+    /**
      * Computed full name attribute.
      */
     protected function fullName(): Attribute

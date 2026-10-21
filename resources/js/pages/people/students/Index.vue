@@ -984,7 +984,8 @@ const confirmDeleteStudent = () => {
                                 <Input
                                     id="first_name"
                                     v-model="studentForm.first_name"
-                                    placeholder="e.g. Maryam"
+                                    placeholder="e.g. MARYAM"
+                                    class="uppercase"
                                     required
                                 />
                                 <InputError :message="studentForm.errors.first_name" />
@@ -995,7 +996,8 @@ const confirmDeleteStudent = () => {
                                 <Input
                                     id="last_name"
                                     v-model="studentForm.last_name"
-                                    placeholder="e.g. Aliyu"
+                                    placeholder="e.g. ALIYU"
+                                    class="uppercase"
                                     required
                                 />
                                 <InputError :message="studentForm.errors.last_name" />

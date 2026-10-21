@@ -781,7 +781,8 @@ const confirmDeleteTeacher = () => {
                             <Input
                                 id="teacher-first-name"
                                 v-model="teacherForm.first_name"
-                                placeholder="e.g. Aliyu, Fatima, John"
+                                placeholder="e.g. ALIYU, FATIMA, JOHN"
+                                class="uppercase"
                                 required
                             />
                             <InputError :message="teacherForm.errors.first_name" />
@@ -792,7 +793,8 @@ const confirmDeleteTeacher = () => {
                             <Input
                                 id="teacher-last-name"
                                 v-model="teacherForm.last_name"
-                                placeholder="e.g. Musa, Bello, Adeyemi"
+                                placeholder="e.g. MUSA, BELLO, ADEYEMI"
+                                class="uppercase"
                                 required
                             />
                             <InputError :message="teacherForm.errors.last_name" />

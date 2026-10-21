@@ -193,15 +193,15 @@ const calculateAge = (dobString: string | null): number | null => {
 <template>
     <Head :title="`${student.user.name} - Student Profile`" />
 
-    <div class="space-y-6 max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 pb-12 print:p-0 print:space-y-3">
+    <div class="space-y-6 max-w-7xl w-full min-w-0 mx-auto p-3 sm:p-6 lg:p-8 pb-12 print:p-0 print:space-y-3 overflow-x-hidden">
         <!-- Top Back Navigation & Action Bar -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                 <Link
                     :href="peopleStudentsIndex().url"
-                    class="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group"
+                    class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group"
                 >
-                    <ArrowLeft class="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    <ArrowLeft class="h-4 w-4 transition-transform group-hover:-translate-x-1 shrink-0" />
                     <span>Back to Students Directory</span>
                 </Link>
 
@@ -209,9 +209,9 @@ const calculateAge = (dobString: string | null): number | null => {
                     <span class="text-muted-foreground/40">•</span>
                     <Link
                         :href="peopleAlumniIndex().url"
-                        class="inline-flex items-center gap-1.5 text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 transition-colors"
+                        class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 transition-colors"
                     >
-                        <Award class="h-4 w-4" />
+                        <Award class="h-4 w-4 shrink-0" />
                         <span>Alumni Directory</span>
                     </Link>
                 </template>
@@ -221,23 +221,23 @@ const calculateAge = (dobString: string | null): number | null => {
                 <Button
                     variant="outline"
                     size="sm"
-                    class="gap-1.5 text-xs print:hidden"
+                    class="gap-1.5 text-xs print:hidden w-full sm:w-auto justify-center"
                     @click="printProfile"
                 >
-                    <Printer class="h-3.5 w-3.5" />
+                    <Printer class="h-3.5 w-3.5 shrink-0" />
                     <span>Print Profile</span>
                 </Button>
             </div>
         </div>
 
         <!-- Student Hero Profile Header -->
-        <Card class="overflow-hidden border-border/60 shadow-xs">
-            <div class="h-20 bg-linear-to-r from-primary/15 via-purple-500/10 to-emerald-500/15 border-b border-border/40" />
-            <CardContent class="relative pt-0 pb-6 px-6 sm:px-8">
-                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-10 sm:-mt-12">
-                    <div class="flex flex-col sm:flex-row sm:items-end gap-4">
+        <Card class="overflow-hidden border-border/60 shadow-xs w-full max-w-full min-w-0">
+            <div class="h-16 sm:h-20 bg-linear-to-r from-primary/15 via-purple-500/10 to-emerald-500/15 border-b border-border/40" />
+            <CardContent class="relative pt-0 pb-6 px-4 sm:px-8">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-8 sm:-mt-12">
+                    <div class="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 min-w-0 w-full">
                         <!-- Avatar / Initials -->
-                        <div class="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-card border-4 border-background shadow-md flex items-center justify-center text-xl sm:text-2xl font-bold text-primary shrink-0 select-none">
+                        <div class="h-18 w-18 sm:h-24 sm:w-24 rounded-2xl bg-card border-4 border-background shadow-md flex items-center justify-center text-lg sm:text-2xl font-bold text-primary shrink-0 select-none">
                             <img
                                 v-if="student.user.avatar"
                                 :src="student.user.avatar"
@@ -248,9 +248,9 @@ const calculateAge = (dobString: string | null): number | null => {
                         </div>
 
                         <!-- Core Titles & Badges -->
-                        <div class="space-y-1">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                        <div class="space-y-1.5 min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                <h1 class="text-lg sm:text-2xl font-bold tracking-tight text-foreground break-words">
                                     {{ student.user.name }}
                                 </h1>
                                 <Badge
@@ -258,7 +258,7 @@ const calculateAge = (dobString: string | null): number | null => {
                                     variant="outline"
                                     class="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200 text-xs gap-1 font-semibold"
                                 >
-                                    <GraduationCap class="h-3 w-3" />
+                                    <GraduationCap class="h-3 w-3 shrink-0" />
                                     <span>Alumni / Graduated</span>
                                 </Badge>
                                 <Badge
@@ -267,8 +267,8 @@ const calculateAge = (dobString: string | null): number | null => {
                                     :class="student.user.is_active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200' : 'text-muted-foreground'"
                                     class="text-xs gap-1"
                                 >
-                                    <CheckCircle2 v-if="student.user.is_active" class="h-3 w-3" />
-                                    <XCircle v-else class="h-3 w-3" />
+                                    <CheckCircle2 v-if="student.user.is_active" class="h-3 w-3 shrink-0" />
+                                    <XCircle v-else class="h-3 w-3 shrink-0" />
                                     <span>{{ student.user.is_active ? 'Active Student' : 'Inactive' }}</span>
                                 </Badge>
                                 <Badge
@@ -283,21 +283,21 @@ const calculateAge = (dobString: string | null): number | null => {
                                 </Badge>
                             </div>
 
-                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground font-medium">
-                                <div class="flex items-center gap-1.5 font-mono text-primary font-semibold">
-                                    <IdCard class="h-3.5 w-3.5" />
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground font-medium">
+                                <div class="flex items-center gap-1.5 font-mono text-primary font-semibold shrink-0">
+                                    <IdCard class="h-3.5 w-3.5 shrink-0" />
                                     <span>{{ student.admission_number }}</span>
                                 </div>
-                                <div v-if="student.user.email" class="flex items-center gap-1.5">
-                                    <Mail class="h-3.5 w-3.5 text-muted-foreground/70" />
-                                    <span>{{ student.user.email }}</span>
+                                <div v-if="student.user.email" class="flex items-center gap-1.5 min-w-0">
+                                    <Mail class="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                                    <span class="break-all">{{ student.user.email }}</span>
                                 </div>
-                                <div v-if="student.user.phone" class="flex items-center gap-1.5">
-                                    <Phone class="h-3.5 w-3.5 text-muted-foreground/70" />
+                                <div v-if="student.user.phone" class="flex items-center gap-1.5 shrink-0">
+                                    <Phone class="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                                     <span>{{ student.user.phone }}</span>
                                 </div>
-                                <div class="flex items-center gap-1.5">
-                                    <Calendar class="h-3.5 w-3.5 text-muted-foreground/70" />
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <Calendar class="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
                                     <span>Admitted: {{ student.admission_date }}</span>
                                 </div>
                             </div>
@@ -308,16 +308,16 @@ const calculateAge = (dobString: string | null): number | null => {
         </Card>
 
         <!-- KPI Metric Cards Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full min-w-0">
             <!-- Current Class Card -->
-            <Card class="border-border/60">
-                <CardContent class="p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">Current Class</p>
-                        <h3 class="text-lg font-bold text-foreground mt-0.5">
+            <Card class="border-border/60 min-w-0">
+                <CardContent class="p-4 flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Current Class</p>
+                        <h3 class="text-base sm:text-lg font-bold text-foreground mt-0.5 truncate">
                             {{ student.current_enrollment?.school_class?.name ?? 'Unallocated' }}
                         </h3>
-                        <p class="text-xs text-muted-foreground mt-0.5">
+                        <p class="text-xs text-muted-foreground mt-0.5 truncate">
                             Section {{ student.current_enrollment?.section?.name ?? 'General' }}
                             <span v-if="student.current_enrollment?.school_class?.stage"> ({{ student.current_enrollment.school_class.stage }})</span>
                         </p>
@@ -329,14 +329,14 @@ const calculateAge = (dobString: string | null): number | null => {
             </Card>
 
             <!-- Academic Session Card -->
-            <Card class="border-border/60">
-                <CardContent class="p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">Academic Session</p>
-                        <h3 class="text-lg font-bold text-foreground mt-0.5 truncate max-w-[150px]">
+            <Card class="border-border/60 min-w-0">
+                <CardContent class="p-4 flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Academic Session</p>
+                        <h3 class="text-base sm:text-lg font-bold text-foreground mt-0.5 truncate">
                             {{ student.current_enrollment?.academic_session?.name ?? 'No Session' }}
                         </h3>
-                        <p class="text-xs text-muted-foreground mt-0.5">
+                        <p class="text-xs text-muted-foreground mt-0.5 truncate">
                             Roll No: <span class="font-mono font-medium">{{ student.current_enrollment?.roll_number ?? student.admission_number }}</span>
                         </p>
                     </div>
@@ -347,14 +347,14 @@ const calculateAge = (dobString: string | null): number | null => {
             </Card>
 
             <!-- Attendance Rate Card -->
-            <Card class="border-border/60">
-                <CardContent class="p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">Attendance Rate</p>
-                        <h3 class="text-lg font-bold text-foreground mt-0.5">
+            <Card class="border-border/60 min-w-0">
+                <CardContent class="p-4 flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Attendance Rate</p>
+                        <h3 class="text-base sm:text-lg font-bold text-foreground mt-0.5">
                             {{ attendanceStats.rate }}%
                         </h3>
-                        <p class="text-xs text-muted-foreground mt-0.5">
+                        <p class="text-xs text-muted-foreground mt-0.5 truncate">
                             {{ attendanceStats.present }} Present of {{ attendanceStats.total }} days
                         </p>
                     </div>
@@ -365,14 +365,14 @@ const calculateAge = (dobString: string | null): number | null => {
             </Card>
 
             <!-- Academic Marks Summary Card -->
-            <Card class="border-border/60">
-                <CardContent class="p-4 flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-muted-foreground font-medium uppercase tracking-wider">Academic Performance</p>
-                        <h3 class="text-lg font-bold text-foreground mt-0.5">
+            <Card class="border-border/60 min-w-0">
+                <CardContent class="p-4 flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">Academic Performance</p>
+                        <h3 class="text-base sm:text-lg font-bold text-foreground mt-0.5">
                             {{ averageScore !== null ? `${averageScore}%` : 'N/A' }}
                         </h3>
-                        <p class="text-xs text-muted-foreground mt-0.5">
+                        <p class="text-xs text-muted-foreground mt-0.5 truncate">
                             {{ marks.length }} subjects recorded
                         </p>
                     </div>
@@ -384,109 +384,111 @@ const calculateAge = (dobString: string | null): number | null => {
         </div>
 
         <!-- Navigation Tabs -->
-        <div class="flex items-center gap-1.5 border-b border-border/60 overflow-x-auto pb-px">
-            <button
-                type="button"
-                @click="activeTab = 'overview'"
-                class="px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap"
-                :class="activeTab === 'overview'
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
-            >
-                <IdCard class="h-4 w-4" />
-                <span>Bio-Data & Profile</span>
-            </button>
+        <div class="w-full max-w-full min-w-0 border-b border-border/60">
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                <button
+                    type="button"
+                    @click="activeTab = 'overview'"
+                    class="px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
+                    :class="activeTab === 'overview'
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
+                >
+                    <IdCard class="h-4 w-4 shrink-0" />
+                    <span>Bio-Data & Profile</span>
+                </button>
 
-            <button
-                type="button"
-                @click="activeTab = 'guardian'"
-                class="px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap"
-                :class="activeTab === 'guardian'
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
-            >
-                <HeartHandshake class="h-4 w-4" />
-                <span>Parent / Guardian</span>
-            </button>
+                <button
+                    type="button"
+                    @click="activeTab = 'guardian'"
+                    class="px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
+                    :class="activeTab === 'guardian'
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
+                >
+                    <HeartHandshake class="h-4 w-4 shrink-0" />
+                    <span>Parent / Guardian</span>
+                </button>
 
-            <button
-                type="button"
-                @click="activeTab = 'enrollments'"
-                class="px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap"
-                :class="activeTab === 'enrollments'
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
-            >
-                <GraduationCap class="h-4 w-4" />
-                <span>Enrollment History ({{ student.enrollments?.length ?? 0 }})</span>
-            </button>
+                <button
+                    type="button"
+                    @click="activeTab = 'enrollments'"
+                    class="px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
+                    :class="activeTab === 'enrollments'
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
+                >
+                    <GraduationCap class="h-4 w-4 shrink-0" />
+                    <span>Enrollment History ({{ student.enrollments?.length ?? 0 }})</span>
+                </button>
 
-            <button
-                type="button"
-                @click="activeTab = 'marks'"
-                class="px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap"
-                :class="activeTab === 'marks'
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
-            >
-                <Award class="h-4 w-4" />
-                <span>Examinations & CA Marks ({{ marks.length }})</span>
-            </button>
+                <button
+                    type="button"
+                    @click="activeTab = 'marks'"
+                    class="px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
+                    :class="activeTab === 'marks'
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
+                >
+                    <Award class="h-4 w-4 shrink-0" />
+                    <span>Examinations & CA Marks ({{ marks.length }})</span>
+                </button>
 
-            <button
-                type="button"
-                @click="activeTab = 'attendance'"
-                class="px-4 py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-2 whitespace-nowrap"
-                :class="activeTab === 'attendance'
-                    ? 'border-primary text-primary bg-primary/5'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
-            >
-                <Clock class="h-4 w-4" />
-                <span>Attendance Log ({{ attendanceStats.total }})</span>
-            </button>
+                <button
+                    type="button"
+                    @click="activeTab = 'attendance'"
+                    class="px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-lg transition-colors border-b-2 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap shrink-0"
+                    :class="activeTab === 'attendance'
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30'"
+                >
+                    <Clock class="h-4 w-4 shrink-0" />
+                    <span>Attendance Log ({{ attendanceStats.total }})</span>
+                </button>
+            </div>
         </div>
 
         <!-- TAB 1: BIO-DATA & PROFILE -->
-        <div v-if="activeTab === 'overview'" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div v-if="activeTab === 'overview'" class="space-y-6 w-full min-w-0">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
                 <!-- Personal Bio-Data Card -->
-                <Card class="border-border/60 shadow-xs">
-                    <CardHeader class="pb-3 border-b border-border/40">
+                <Card class="border-border/60 shadow-xs min-w-0 overflow-hidden w-full">
+                    <CardHeader class="pb-3 border-b border-border/40 px-4 sm:px-6">
                         <CardTitle class="text-sm font-semibold flex items-center gap-2">
-                            <User class="h-4 w-4 text-primary" />
+                            <User class="h-4 w-4 text-primary shrink-0" />
                             <span>Personal Information</span>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent class="pt-4 divide-y divide-border/30 text-xs">
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Full Name</span>
-                            <span class="font-semibold text-foreground">{{ student.user.name }}</span>
+                    <CardContent class="pt-4 px-4 sm:px-6 divide-y divide-border/30 text-xs">
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Full Name</span>
+                            <span class="font-semibold text-foreground sm:text-right break-words">{{ student.user.name }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Gender</span>
-                            <span class="font-medium capitalize text-foreground">{{ student.user.gender }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Gender</span>
+                            <span class="font-medium capitalize text-foreground sm:text-right">{{ student.user.gender }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Date of Birth</span>
-                            <span class="font-medium text-foreground">
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Date of Birth</span>
+                            <span class="font-medium text-foreground sm:text-right break-words">
                                 {{ student.date_of_birth ? `${student.date_of_birth} (${calculateAge(student.date_of_birth)} yrs)` : 'Not Recorded' }}
                             </span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">State of Origin</span>
-                            <span class="font-medium text-foreground">{{ student.state_of_origin ?? 'Not Recorded' }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">State of Origin</span>
+                            <span class="font-medium text-foreground sm:text-right">{{ student.state_of_origin ?? 'Not Recorded' }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">L.G.A.</span>
-                            <span class="font-medium text-foreground">{{ student.lga ?? 'Not Recorded' }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">L.G.A.</span>
+                            <span class="font-medium text-foreground sm:text-right">{{ student.lga ?? 'Not Recorded' }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Blood Group</span>
-                            <span class="font-medium text-foreground">{{ student.user.blood_group ?? 'Not Recorded' }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Blood Group</span>
+                            <span class="font-medium text-foreground sm:text-right">{{ student.user.blood_group ?? 'Not Recorded' }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-start">
-                            <span class="text-muted-foreground">Home Address</span>
-                            <span class="font-medium text-foreground text-right max-w-[220px]">
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                            <span class="text-muted-foreground shrink-0">Home Address</span>
+                            <span class="font-medium text-foreground sm:text-right break-words sm:max-w-[240px]">
                                 {{ student.user.address ?? 'Not Recorded' }}
                             </span>
                         </div>
@@ -494,47 +496,47 @@ const calculateAge = (dobString: string | null): number | null => {
                 </Card>
 
                 <!-- Student Portal & Registration Card -->
-                <Card class="border-border/60 shadow-xs">
-                    <CardHeader class="pb-3 border-b border-border/40">
+                <Card class="border-border/60 shadow-xs min-w-0 overflow-hidden w-full">
+                    <CardHeader class="pb-3 border-b border-border/40 px-4 sm:px-6">
                         <CardTitle class="text-sm font-semibold flex items-center gap-2">
-                            <ShieldCheck class="h-4 w-4 text-purple-500" />
+                            <ShieldCheck class="h-4 w-4 text-purple-500 shrink-0" />
                             <span>Student Portal & Admission Details</span>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent class="pt-4 divide-y divide-border/30 text-xs">
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Admission Number</span>
-                            <span class="font-mono font-semibold text-primary">{{ student.admission_number }}</span>
+                    <CardContent class="pt-4 px-4 sm:px-6 divide-y divide-border/30 text-xs">
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Admission Number</span>
+                            <span class="font-mono font-semibold text-primary sm:text-right break-all">{{ student.admission_number }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Admission Date</span>
-                            <span class="font-medium text-foreground">{{ student.admission_date }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Admission Date</span>
+                            <span class="font-medium text-foreground sm:text-right">{{ student.admission_date }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Portal Login Email</span>
-                            <span class="font-mono text-foreground font-medium">{{ student.user.email ?? 'None' }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Portal Login Email</span>
+                            <span class="font-mono text-foreground font-medium sm:text-right break-all">{{ student.user.email ?? 'None' }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Portal Username</span>
-                            <span class="font-mono text-foreground font-medium">{{ student.user.username ?? 'None' }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Portal Username</span>
+                            <span class="font-mono text-foreground font-medium sm:text-right break-all">{{ student.user.username ?? 'None' }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Student Phone</span>
-                            <span class="font-medium text-foreground">{{ student.user.phone ?? 'None' }}</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Student Phone</span>
+                            <span class="font-medium text-foreground sm:text-right">{{ student.user.phone ?? 'None' }}</span>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Account Status</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Account Status</span>
                             <Badge
                                 :variant="student.user.is_active ? 'secondary' : 'outline'"
                                 :class="student.user.is_active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200' : 'text-muted-foreground'"
-                                class="text-[11px]"
+                                class="text-[11px] w-fit"
                             >
                                 {{ student.user.is_active ? 'Active' : 'Inactive' }}
                             </Badge>
                         </div>
-                        <div class="py-2.5 flex justify-between items-center">
-                            <span class="text-muted-foreground">Default Initial Password</span>
-                            <span class="font-mono font-semibold px-1.5 py-0.5 rounded bg-muted text-foreground">12345678</span>
+                        <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                            <span class="text-muted-foreground shrink-0">Default Initial Password</span>
+                            <span class="font-mono font-semibold px-1.5 py-0.5 rounded bg-muted text-foreground w-fit">12345678</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -542,43 +544,43 @@ const calculateAge = (dobString: string | null): number | null => {
         </div>
 
         <!-- TAB 2: PARENT / GUARDIAN -->
-        <div v-if="activeTab === 'guardian'" class="space-y-6">
-            <Card class="border-border/60 shadow-xs max-w-2xl">
-                <CardHeader class="pb-3 border-b border-border/40">
+        <div v-if="activeTab === 'guardian'" class="space-y-6 w-full min-w-0">
+            <Card class="border-border/60 shadow-xs max-w-2xl min-w-0 overflow-hidden w-full">
+                <CardHeader class="pb-3 border-b border-border/40 px-4 sm:px-6">
                     <CardTitle class="text-sm font-semibold flex items-center gap-2">
-                        <HeartHandshake class="h-4 w-4 text-emerald-500" />
+                        <HeartHandshake class="h-4 w-4 text-emerald-500 shrink-0" />
                         <span>Assigned Parent / Legal Guardian</span>
                     </CardTitle>
                 </CardHeader>
-                <CardContent v-if="student.guardian" class="pt-4 divide-y divide-border/30 text-xs">
-                    <div class="py-2.5 flex justify-between items-center">
-                        <span class="text-muted-foreground">Guardian Full Name</span>
-                        <span class="font-semibold text-foreground text-sm">{{ student.guardian.name }}</span>
+                <CardContent v-if="student.guardian" class="pt-4 px-4 sm:px-6 divide-y divide-border/30 text-xs">
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                        <span class="text-muted-foreground shrink-0">Guardian Full Name</span>
+                        <span class="font-semibold text-foreground text-sm sm:text-right break-words">{{ student.guardian.name }}</span>
                     </div>
-                    <div class="py-2.5 flex justify-between items-center">
-                        <span class="text-muted-foreground">Relationship</span>
-                        <Badge variant="secondary" class="font-medium text-xs">{{ student.guardian.relationship }}</Badge>
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                        <span class="text-muted-foreground shrink-0">Relationship</span>
+                        <Badge variant="secondary" class="font-medium text-xs w-fit">{{ student.guardian.relationship }}</Badge>
                     </div>
-                    <div class="py-2.5 flex justify-between items-center">
-                        <span class="text-muted-foreground">Primary Contact Phone</span>
-                        <span class="font-mono font-medium text-foreground">{{ student.guardian.phone }}</span>
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                        <span class="text-muted-foreground shrink-0">Primary Contact Phone</span>
+                        <span class="font-mono font-medium text-foreground sm:text-right">{{ student.guardian.phone }}</span>
                     </div>
-                    <div class="py-2.5 flex justify-between items-center">
-                        <span class="text-muted-foreground">Email Address</span>
-                        <span class="font-medium text-foreground">{{ student.guardian.email ?? 'Not Provided' }}</span>
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                        <span class="text-muted-foreground shrink-0">Email Address</span>
+                        <span class="font-medium text-foreground sm:text-right break-all">{{ student.guardian.email ?? 'Not Provided' }}</span>
                     </div>
-                    <div class="py-2.5 flex justify-between items-center">
-                        <span class="text-muted-foreground">Occupation</span>
-                        <span class="font-medium text-foreground">{{ student.guardian.occupation ?? 'Not Provided' }}</span>
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                        <span class="text-muted-foreground shrink-0">Occupation</span>
+                        <span class="font-medium text-foreground sm:text-right">{{ student.guardian.occupation ?? 'Not Provided' }}</span>
                     </div>
-                    <div class="py-2.5 flex justify-between items-start">
-                        <span class="text-muted-foreground">Address</span>
-                        <span class="font-medium text-foreground text-right max-w-xs">
+                    <div class="py-2.5 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1">
+                        <span class="text-muted-foreground shrink-0">Address</span>
+                        <span class="font-medium text-foreground sm:text-right break-words sm:max-w-xs">
                             {{ student.guardian.address ?? 'Not Provided' }}
                         </span>
                     </div>
                 </CardContent>
-                <CardContent v-else class="py-12 text-center text-muted-foreground">
+                <CardContent v-else class="py-12 text-center text-muted-foreground px-4">
                     <HeartHandshake class="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
                     <p class="font-medium text-sm">No parent or legal guardian assigned to this student profile.</p>
                 </CardContent>
@@ -586,24 +588,24 @@ const calculateAge = (dobString: string | null): number | null => {
         </div>
 
         <!-- TAB 3: ENROLLMENT HISTORY -->
-        <div v-if="activeTab === 'enrollments'" class="space-y-4">
-            <Card class="border-border/60 shadow-xs overflow-hidden">
-                <CardHeader class="pb-3 border-b border-border/40">
+        <div v-if="activeTab === 'enrollments'" class="space-y-4 w-full min-w-0">
+            <Card class="border-border/60 shadow-xs overflow-hidden w-full max-w-full min-w-0">
+                <CardHeader class="pb-3 border-b border-border/40 px-4 sm:px-6">
                     <CardTitle class="text-sm font-semibold flex items-center gap-2">
-                        <GraduationCap class="h-4 w-4 text-primary" />
+                        <GraduationCap class="h-4 w-4 text-primary shrink-0" />
                         <span>Session Enrollment History</span>
                     </CardTitle>
                 </CardHeader>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="w-full max-w-full overflow-x-auto min-w-0">
+                    <table class="w-full min-w-[640px] text-left text-xs">
                         <thead class="bg-muted/40 text-muted-foreground uppercase tracking-wider text-[11px] border-b border-border/60">
                             <tr>
-                                <th class="px-6 py-3 font-semibold">Academic Session</th>
-                                <th class="px-6 py-3 font-semibold">Class</th>
-                                <th class="px-6 py-3 font-semibold">Section</th>
-                                <th class="px-6 py-3 font-semibold">Previous Record</th>
-                                <th class="px-6 py-3 font-semibold">Roll Number</th>
-                                <th class="px-6 py-3 font-semibold">Status</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Academic Session</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Class</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Section</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Previous Record</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Roll Number</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
@@ -612,23 +614,23 @@ const calculateAge = (dobString: string | null): number | null => {
                                 :key="enr.id"
                                 class="hover:bg-muted/30 transition-colors"
                             >
-                                <td class="px-6 py-3.5 font-medium text-foreground flex items-center gap-2">
+                                <td class="px-4 sm:px-6 py-3.5 font-medium text-foreground flex items-center gap-2">
                                     <span>{{ enr.academic_session?.name ?? 'Unknown Session' }}</span>
                                     <Badge
                                         v-if="enr.academic_session?.is_current"
                                         variant="secondary"
-                                        class="text-[10px] bg-primary/10 text-primary border-primary/20"
+                                        class="text-[10px] bg-primary/10 text-primary border-primary/20 shrink-0"
                                     >
                                         Current
                                     </Badge>
                                 </td>
-                                <td class="px-6 py-3.5 text-foreground font-medium">
+                                <td class="px-4 sm:px-6 py-3.5 text-foreground font-medium">
                                     {{ enr.school_class?.name ?? 'N/A' }}
                                 </td>
-                                <td class="px-6 py-3.5 text-muted-foreground">
+                                <td class="px-4 sm:px-6 py-3.5 text-muted-foreground">
                                     Section {{ enr.section?.name ?? 'General' }}
                                 </td>
-                                <td class="px-6 py-3.5">
+                                <td class="px-4 sm:px-6 py-3.5">
                                     <span v-if="enr.previous_enrollment" class="inline-flex items-center gap-1 text-muted-foreground">
                                         <span class="font-medium text-foreground">{{ enr.previous_enrollment.school_class?.name }}</span>
                                         <span>(Sec {{ enr.previous_enrollment.section?.name }})</span>
@@ -638,10 +640,10 @@ const calculateAge = (dobString: string | null): number | null => {
                                         — Initial Entry
                                     </span>
                                 </td>
-                                <td class="px-6 py-3.5 font-mono text-muted-foreground">
+                                <td class="px-4 sm:px-6 py-3.5 font-mono text-muted-foreground">
                                     {{ enr.roll_number ?? student.admission_number }}
                                 </td>
-                                <td class="px-6 py-3.5">
+                                <td class="px-4 sm:px-6 py-3.5">
                                     <Badge
                                         variant="outline"
                                         class="capitalize text-[11px]"
@@ -656,7 +658,7 @@ const calculateAge = (dobString: string | null): number | null => {
                                 </td>
                             </tr>
                             <tr v-if="!student.enrollments || student.enrollments.length === 0">
-                                <td colspan="6" class="px-6 py-8 text-center text-muted-foreground">
+                                <td colspan="6" class="px-4 sm:px-6 py-8 text-center text-muted-foreground">
                                     No enrollment records found.
                                 </td>
                             </tr>
@@ -667,12 +669,12 @@ const calculateAge = (dobString: string | null): number | null => {
         </div>
 
         <!-- TAB 4: EXAMINATIONS & CA MARKS -->
-        <div v-if="activeTab === 'marks'" class="space-y-4">
-            <Card class="border-border/60 shadow-xs overflow-hidden">
-                <CardHeader class="pb-3 border-b border-border/40 flex flex-row items-center justify-between">
+        <div v-if="activeTab === 'marks'" class="space-y-4 w-full min-w-0">
+            <Card class="border-border/60 shadow-xs overflow-hidden w-full max-w-full min-w-0">
+                <CardHeader class="pb-3 border-b border-border/40 px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
                         <CardTitle class="text-sm font-semibold flex items-center gap-2">
-                            <Award class="h-4 w-4 text-amber-500" />
+                            <Award class="h-4 w-4 text-amber-500 shrink-0" />
                             <span>Academic Performance & Assessment Marks</span>
                         </CardTitle>
                         <CardDescription class="text-xs mt-0.5">
@@ -680,18 +682,18 @@ const calculateAge = (dobString: string | null): number | null => {
                         </CardDescription>
                     </div>
                 </CardHeader>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="w-full max-w-full overflow-x-auto min-w-0">
+                    <table class="w-full min-w-[700px] text-left text-xs">
                         <thead class="bg-muted/40 text-muted-foreground uppercase tracking-wider text-[11px] border-b border-border/60">
                             <tr>
-                                <th class="px-6 py-3 font-semibold">Subject</th>
-                                <th class="px-4 py-3 font-semibold text-center">CA 1</th>
-                                <th class="px-4 py-3 font-semibold text-center">CA 2</th>
-                                <th class="px-4 py-3 font-semibold text-center">CA 3</th>
-                                <th class="px-4 py-3 font-semibold text-center">Exam</th>
-                                <th class="px-4 py-3 font-semibold text-center">Total Score</th>
-                                <th class="px-4 py-3 font-semibold text-center">Grade</th>
-                                <th class="px-6 py-3 font-semibold">Teacher Remark</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Subject</th>
+                                <th class="px-3 sm:px-4 py-3 font-semibold text-center">CA 1</th>
+                                <th class="px-3 sm:px-4 py-3 font-semibold text-center">CA 2</th>
+                                <th class="px-3 sm:px-4 py-3 font-semibold text-center">CA 3</th>
+                                <th class="px-3 sm:px-4 py-3 font-semibold text-center">Exam</th>
+                                <th class="px-3 sm:px-4 py-3 font-semibold text-center">Total Score</th>
+                                <th class="px-3 sm:px-4 py-3 font-semibold text-center">Grade</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Teacher Remark</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
@@ -700,7 +702,7 @@ const calculateAge = (dobString: string | null): number | null => {
                                 :key="mark.id"
                                 class="hover:bg-muted/30 transition-colors"
                             >
-                                <td class="px-6 py-3.5">
+                                <td class="px-4 sm:px-6 py-3.5">
                                     <div class="font-medium text-foreground">
                                         {{ mark.subject?.name ?? 'Subject' }}
                                     </div>
@@ -708,22 +710,22 @@ const calculateAge = (dobString: string | null): number | null => {
                                         {{ mark.subject?.code }}
                                     </div>
                                 </td>
-                                <td class="px-4 py-3.5 text-center font-mono text-muted-foreground">
+                                <td class="px-3 sm:px-4 py-3.5 text-center font-mono text-muted-foreground">
                                     {{ mark.ca1 ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3.5 text-center font-mono text-muted-foreground">
+                                <td class="px-3 sm:px-4 py-3.5 text-center font-mono text-muted-foreground">
                                     {{ mark.ca2 ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3.5 text-center font-mono text-muted-foreground">
+                                <td class="px-3 sm:px-4 py-3.5 text-center font-mono text-muted-foreground">
                                     {{ mark.ca3 ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3.5 text-center font-mono text-muted-foreground font-medium">
+                                <td class="px-3 sm:px-4 py-3.5 text-center font-mono text-muted-foreground font-medium">
                                     {{ mark.exam_score ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3.5 text-center font-mono font-bold text-foreground">
+                                <td class="px-3 sm:px-4 py-3.5 text-center font-mono font-bold text-foreground">
                                     {{ mark.total_score ?? '-' }}
                                 </td>
-                                <td class="px-4 py-3.5 text-center">
+                                <td class="px-3 sm:px-4 py-3.5 text-center">
                                     <Badge
                                         v-if="mark.grade"
                                         variant="secondary"
@@ -733,12 +735,12 @@ const calculateAge = (dobString: string | null): number | null => {
                                     </Badge>
                                     <span v-else class="text-muted-foreground">-</span>
                                 </td>
-                                <td class="px-6 py-3.5 text-muted-foreground text-xs italic">
+                                <td class="px-4 sm:px-6 py-3.5 text-muted-foreground text-xs italic">
                                     {{ mark.teacher_comment ?? mark.grade?.remark ?? 'No comment' }}
                                 </td>
                             </tr>
                             <tr v-if="marks.length === 0">
-                                <td colspan="8" class="px-6 py-12 text-center text-muted-foreground">
+                                <td colspan="8" class="px-4 sm:px-6 py-12 text-center text-muted-foreground">
                                     <Award class="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
                                     <p class="font-medium">No marks or assessment scores recorded yet.</p>
                                 </td>
@@ -750,30 +752,30 @@ const calculateAge = (dobString: string | null): number | null => {
         </div>
 
         <!-- TAB 5: ATTENDANCE LOG -->
-        <div v-if="activeTab === 'attendance'" class="space-y-4">
-            <Card class="border-border/60 shadow-xs overflow-hidden">
-                <CardHeader class="pb-3 border-b border-border/40 flex flex-row items-center justify-between">
-                    <div>
+        <div v-if="activeTab === 'attendance'" class="space-y-4 w-full min-w-0">
+            <Card class="border-border/60 shadow-xs overflow-hidden w-full max-w-full min-w-0">
+                <CardHeader class="pb-3 border-b border-border/40 px-4 sm:px-6 flex flex-row items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
                         <CardTitle class="text-sm font-semibold flex items-center gap-2">
-                            <Clock class="h-4 w-4 text-emerald-500" />
+                            <Clock class="h-4 w-4 text-emerald-500 shrink-0" />
                             <span>Daily Attendance</span>
                         </CardTitle>
-                        <CardDescription class="text-xs mt-0.5">
+                        <CardDescription class="text-xs mt-0.5 truncate">
                             Recent attendance tracking records for this student.
                         </CardDescription>
                     </div>
-                    <Badge variant="outline" class="font-mono text-xs">
+                    <Badge variant="outline" class="font-mono text-xs shrink-0">
                         Rate: {{ attendanceStats.rate }}%
                     </Badge>
                 </CardHeader>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="w-full max-w-full overflow-x-auto min-w-0">
+                    <table class="w-full min-w-[500px] text-left text-xs">
                         <thead class="bg-muted/40 text-muted-foreground uppercase tracking-wider text-[11px] border-b border-border/60">
                             <tr>
-                                <th class="px-6 py-3 font-semibold">Date</th>
-                                <th class="px-6 py-3 font-semibold">Academic Session</th>
-                                <th class="px-6 py-3 font-semibold">Attendance Status</th>
-                                <th class="px-6 py-3 font-semibold">Remark</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Date</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Academic Session</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Attendance Status</th>
+                                <th class="px-4 sm:px-6 py-3 font-semibold">Remark</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border/40">
@@ -782,13 +784,13 @@ const calculateAge = (dobString: string | null): number | null => {
                                 :key="att.id"
                                 class="hover:bg-muted/30 transition-colors"
                             >
-                                <td class="px-6 py-3.5 font-medium text-foreground">
+                                <td class="px-4 sm:px-6 py-3.5 font-medium text-foreground">
                                     {{ att.attendance_date }}
                                 </td>
-                                <td class="px-6 py-3.5 text-muted-foreground">
+                                <td class="px-4 sm:px-6 py-3.5 text-muted-foreground">
                                     {{ att.enrollment?.academic_session?.name ?? 'N/A' }}
                                 </td>
-                                <td class="px-6 py-3.5">
+                                <td class="px-4 sm:px-6 py-3.5">
                                     <Badge
                                         variant="outline"
                                         class="capitalize text-[11px] gap-1 font-medium"
@@ -799,18 +801,18 @@ const calculateAge = (dobString: string | null): number | null => {
                                             'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200': att.status === 'excused',
                                         }"
                                     >
-                                        <CheckCircle2 v-if="att.status === 'present'" class="h-3 w-3" />
-                                        <Clock v-else-if="att.status === 'late'" class="h-3 w-3" />
-                                        <XCircle v-else class="h-3 w-3" />
+                                        <CheckCircle2 v-if="att.status === 'present'" class="h-3 w-3 shrink-0" />
+                                        <Clock v-else-if="att.status === 'late'" class="h-3 w-3 shrink-0" />
+                                        <XCircle v-else class="h-3 w-3 shrink-0" />
                                         <span>{{ att.status }}</span>
                                     </Badge>
                                 </td>
-                                <td class="px-6 py-3.5 text-muted-foreground text-xs italic">
+                                <td class="px-4 sm:px-6 py-3.5 text-muted-foreground text-xs italic">
                                     {{ att.remark ?? 'Normal' }}
                                 </td>
                             </tr>
                             <tr v-if="attendances.length === 0">
-                                <td colspan="4" class="px-6 py-12 text-center text-muted-foreground">
+                                <td colspan="4" class="px-4 sm:px-6 py-12 text-center text-muted-foreground">
                                     <Clock class="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
                                     <p class="font-medium">No daily attendance records found.</p>
                                 </td>

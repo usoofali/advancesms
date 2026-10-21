@@ -588,7 +588,8 @@ const confirmDeleteGuardian = () => {
                             <Input
                                 id="name"
                                 v-model="guardianForm.name"
-                                placeholder="e.g. Alhaji Ibrahim Danbatta"
+                                placeholder="e.g. ALHAJI IBRAHIM DANBATTA"
+                                class="uppercase"
                                 required
                             />
                             <InputError :message="guardianForm.errors.name" />

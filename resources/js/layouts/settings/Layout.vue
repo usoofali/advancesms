@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import { Building2, Palette, Shield, User } from '@lucide/vue';
+import { Building2, Palette, Server, Shield, User } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import { edit as editSchool } from '@/routes/school-settings';
 import { edit as editSecurity } from '@/routes/security';
+import { index as indexSystemInfo } from '@/routes/system-info';
 import type { NavItem } from '@/types';
 
 const page = usePage();
@@ -43,6 +44,14 @@ const sidebarNavItems = computed<NavItem[]>(() => {
             title: 'School Profile',
             href: editSchool(),
             icon: Building2,
+        });
+    }
+
+    if (isSuperAdmin) {
+        items.push({
+            title: 'System Info',
+            href: indexSystemInfo(),
+            icon: Server,
         });
     }
 

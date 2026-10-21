@@ -98,7 +98,7 @@ class TeacherManagementTest extends TestCase
         $user = $teacher->user;
 
         $this->assertNotNull($user);
-        $this->assertSame('Fatima Ibrahim', $user->name);
+        $this->assertSame('FATIMA IBRAHIM', $user->name);
         $this->assertSame('fatima.ibrahim@school.ng', $user->email);
         $this->assertSame('08031234567', $user->phone);
         $this->assertSame(Gender::FEMALE, $user->gender);
@@ -187,7 +187,7 @@ class TeacherManagementTest extends TestCase
         ]);
 
         $user->refresh();
-        $this->assertSame('Kabiru Bello-Danbatta', $user->name);
+        $this->assertSame('KABIRU BELLO-DANBATTA', $user->name);
         $this->assertSame('k.danbatta@school.ng', $user->email);
         $this->assertFalse((bool) $user->is_active);
     }
@@ -296,7 +296,7 @@ class TeacherManagementTest extends TestCase
         $user = $teacher->user;
 
         $this->assertNotNull($user);
-        $this->assertSame('Usman Danladi', $user->name);
+        $this->assertSame('USMAN DANLADI', $user->name);
         $this->assertSame(UserRole::EXAM_OFFICER, $user->role);
         $this->assertTrue($user->hasRole('exam_officer'));
         $this->assertFalse($user->hasRole('teacher'));

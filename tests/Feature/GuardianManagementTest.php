@@ -73,7 +73,7 @@ class GuardianManagementTest extends TestCase
         $response->assertSessionHas('success');
 
         $this->assertDatabaseHas('guardians', [
-            'name' => 'Alhaji Sani Bello',
+            'name' => 'ALHAJI SANI BELLO',
             'relationship' => 'Father',
             'phone' => '08033445566',
             'email' => 'sani.bello@example.com',
@@ -151,7 +151,7 @@ class GuardianManagementTest extends TestCase
 
         $this->assertDatabaseHas('guardians', [
             'id' => $guardian->id,
-            'name' => 'Dr. Usman Danfodio',
+            'name' => 'DR. USMAN DANFODIO',
             'relationship' => 'Guardian',
             'phone' => '08099887711',
             'email' => 'usman.d@example.com',
@@ -159,7 +159,7 @@ class GuardianManagementTest extends TestCase
         ]);
 
         $user->refresh();
-        $this->assertSame('Dr. Usman Danfodio', $user->name);
+        $this->assertSame('DR. USMAN DANFODIO', $user->name);
         $this->assertSame('08099887711', $user->phone);
         $this->assertSame('usman.d@example.com', $user->email);
     }

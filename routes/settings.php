@@ -3,6 +3,7 @@
 use App\Http\Controllers\SchoolSettingController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\SystemInfoController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +59,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('grades', [SchoolSettingController::class, 'storeGrade'])->name('grades.store');
         Route::put('grades/{grade}', [SchoolSettingController::class, 'updateGrade'])->name('grades.update');
         Route::delete('grades/{grade}', [SchoolSettingController::class, 'destroyGrade'])->name('grades.destroy');
+    });
+
+    // System Information & Housekeeping Management (Superadmin Clearance)
+    Route::prefix('settings/system')->name('system-info.')->group(function () {
+        Route::get('/', [SystemInfoController::class, 'index'])->name('index');
+        Route::post('clear-logs', [SystemInfoController::class, 'clearLogs'])->name('clear-logs');
+        Route::post('storage-link', [SystemInfoController::class, 'linkStorage'])->name('storage-link');
+        Route::post('optimize-clear', [SystemInfoController::class, 'clearCache'])->name('optimize-clear');
+        Route::post('optimize', [SystemInfoController::class, 'optimize'])->name('optimize');
+        Route::post('refresh', [SystemInfoController::class, 'refreshSystem'])->name('refresh');
     });
 });
 
