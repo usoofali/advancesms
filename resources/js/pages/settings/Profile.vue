@@ -80,6 +80,4 @@ const user = computed(() => page.props.auth.user);
             </div>
         </Form>
     </div>
-
-    <DeleteUser />
 </template>

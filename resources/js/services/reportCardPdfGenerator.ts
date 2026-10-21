@@ -311,7 +311,6 @@ export function generateClassBatchReportPdf(
                 { text: 'EXAM', style: 'tableHeader', alignment: 'center', fontSize: 10 },
                 { text: 'TOTAL', style: 'tableHeader', alignment: 'center', fontSize: 10 },
                 { text: 'GRADE', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'PT', style: 'tableHeader', alignment: 'center', fontSize: 10 },
                 { text: "TEACHER'S REMARK", style: 'tableHeader', fontSize: 10 }
             );
 
@@ -335,7 +334,6 @@ export function generateClassBatchReportPdf(
                     { text: mark.exam_score.toString(), alignment: 'center', fontSize: 10 },
                     { text: mark.total_score.toString(), alignment: 'center', fontSize: 10, bold: true },
                     { text: mark.grade || '—', alignment: 'center', fontSize: 10, bold: true },
-                    { text: (mark.grade_point ?? '—').toString(), alignment: 'center', fontSize: 9.5 },
                     { text: mark.teacher_comment || mark.remark || '—', fontSize: 9.5, italics: true }
                 );
 
@@ -349,8 +347,7 @@ export function generateClassBatchReportPdf(
             widths.push(40); // Exam
             widths.push(42); // Total
             widths.push(36); // Grade
-            widths.push(24); // Pt
-            widths.push(75); // Teacher Remark
+            widths.push(85); // Teacher Remark
 
             pdfContent.push({
                 table: {

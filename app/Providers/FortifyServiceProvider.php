@@ -4,8 +4,10 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -32,6 +34,44 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureAuthentication();
+    }
+
+    /**
+     * Configure Fortify authentication with legacy SHA-1 auto-upgrade support.
+     */
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request) {
+            $login = strtolower(trim((string) $request->input(Fortify::username())));
+            $password = (string) $request->input('password');
+
+            $user = User::whereRaw('LOWER(email) = ?', [$login])
+                ->orWhereRaw('LOWER(username) = ?', [$login])
+                ->first();
+
+            if (! $user) {
+                return null;
+            }
+
+            // Seamlessly upgrade legacy 40-character SHA-1 password hashes upon first login
+            if (strlen($user->password) === 40 && sha1($password) === $user->password) {
+                $user->forceFill([
+                    'password' => $password, // Handled by 'password' => 'hashed' cast in User model
+                ])->save();
+
+                return $user;
+            }
+
+            // Standard Bcrypt verification for modern passwords
+            if (str_starts_with($user->password, '$2y$') || str_starts_with($user->password, '$argon2')) {
+                if (Hash::check($password, $user->password)) {
+                    return $user;
+                }
+            }
+
+            return null;
+        });
     }
 
     /**

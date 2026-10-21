@@ -272,7 +272,6 @@ const tdClass = computed(() => {
                             <th :class="thClass" class="text-center w-14">Exam ({{ exam.max_exam }})</th>
                             <th :class="thClass" class="text-center w-14 bg-muted/40 print:bg-neutral-200/50 font-black">Total (100)</th>
                             <th :class="thClass" class="text-center w-10 bg-muted/40 print:bg-neutral-200/50 font-black">Grade</th>
-                            <th :class="thClass" class="text-center w-8 bg-muted/40 print:bg-neutral-200/50">Pt</th>
                             <th :class="thClass" class="min-w-[120px]">Teacher's Remark</th>
                         </tr>
                     </thead>
@@ -311,7 +310,6 @@ const tdClass = computed(() => {
                                     {{ mark.grade }}
                                 </span>
                             </td>
-                            <td :class="tdClass" class="text-center font-mono bg-muted/20 print:bg-neutral-100/50 text-muted-foreground print:text-black">{{ mark.grade_point }}</td>
                             <td :class="tdClass" class="text-muted-foreground print:text-neutral-800 italic text-[9.5px] print:text-[8.5px]">
                                 {{ mark.teacher_comment || mark.remark }}
                             </td>
@@ -319,7 +317,7 @@ const tdClass = computed(() => {
 
                         <!-- Empty state if no marks recorded -->
                         <tr v-if="marks.length === 0">
-                            <td :colspan="7 + exam.ca_count" class="py-4 text-center text-muted-foreground italic text-xs">
+                            <td :colspan="6 + exam.ca_count" class="py-4 text-center text-muted-foreground italic text-xs">
                                 No assessment marks recorded for this terminal examination milestone yet.
                             </td>
                         </tr>
