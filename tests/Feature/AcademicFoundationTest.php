@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Enums\EnrollmentStatus;
 use App\Enums\Gender;
-use App\Enums\SecondaryStage;
 use App\Enums\UserRole;
 use App\Models\AcademicSession;
 use App\Models\AcademicTerm;
@@ -33,7 +32,7 @@ class AcademicFoundationTest extends TestCase
         // Verify School Settings
         $setting = SchoolSetting::current();
         $this->assertNotNull($setting);
-        $this->assertSame('Government Science Academy Gusau', $setting->school_name);
+        $this->assertSame('YUM Academy', $setting->school_name);
 
         // Verify Superadmin
         $admin = User::where('username', 'superadmin')->first();
@@ -50,13 +49,13 @@ class AcademicFoundationTest extends TestCase
         $this->assertNotNull($currentTerm);
         $this->assertSame('Second Term', $currentTerm->name);
 
-        // Verify Classes & Sections (6 classes * 4 arms = 24 sections)
+        // Verify Classes & Sections (6 classes * 4 sections = 24 sections)
         $this->assertSame(6, SchoolClass::count());
         $this->assertSame(24, Section::count());
 
         $jss1 = SchoolClass::where('name', 'JSS 1')->first();
         $this->assertNotNull($jss1);
-        $this->assertSame(SecondaryStage::JUNIOR_SECONDARY, $jss1->stage);
+        $this->assertSame('junior_secondary', $jss1->stage);
         $this->assertCount(4, $jss1->sections);
 
         // Verify Subjects Catalog & Allocations

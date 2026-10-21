@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { HTMLAttributes, Ref } from "vue"
+import { router } from "@inertiajs/vue3"
 import { defaultDocument, useEventListener, useMediaQuery, useVModel } from "@vueuse/core"
 import { TooltipProvider } from "reka-ui"
-import { computed, ref } from "vue"
+import { computed, onMounted, onUnmounted, ref, watch } from "vue"
 import { cn } from "@/lib/utils"
 import { provideSidebarContext, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_COOKIE_NAME, SIDEBAR_KEYBOARD_SHORTCUT, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./utils"
 
@@ -19,7 +20,34 @@ const emits = defineEmits<{
   "update:open": [open: boolean]
 }>()
 
-const isMobile = useMediaQuery("(max-width: 768px)")
+const mediaQuery = useMediaQuery("(max-width: 768px)")
+const isMobile = ref(false)
+
+onMounted(() => {
+  isMobile.value = mediaQuery.value
+  watch(mediaQuery, (val) => {
+    isMobile.value = val
+  })
+
+  // Auto-close mobile sidebar whenever Inertia navigation starts or completes
+  const removeStart = router.on("start", () => {
+    if (openMobile.value) {
+      setOpenMobile(false)
+    }
+  })
+
+  const removeNavigate = router.on("navigate", () => {
+    if (openMobile.value) {
+      setOpenMobile(false)
+    }
+  })
+
+  onUnmounted(() => {
+    removeStart()
+    removeNavigate()
+  })
+})
+
 const openMobile = ref(false)
 
 const open = useVModel(props, "open", emits, {

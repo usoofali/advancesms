@@ -41,8 +41,8 @@ class StudentMark extends Model
                 + (float) ($mark->ca3 ?? 0)
                 + (float) ($mark->exam_score ?? 0);
 
-            // Auto-assign grade if not explicitly set
-            if (! $mark->grade_id) {
+            // Auto-assign or recompute grade if not manually overridden
+            if (! $mark->isDirty('grade_id') || ! $mark->grade_id) {
                 $matchedGrade = Grade::forScore($computedTotal);
                 if ($matchedGrade) {
                     $mark->grade_id = $matchedGrade->id;
@@ -51,21 +51,33 @@ class StudentMark extends Model
         });
     }
 
+    /**
+     * @return BelongsTo<Enrollment, $this>
+     */
     public function enrollment(): BelongsTo
     {
         return $this->belongsTo(Enrollment::class);
     }
 
+    /**
+     * @return BelongsTo<Subject, $this>
+     */
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
     }
 
+    /**
+     * @return BelongsTo<Exam, $this>
+     */
     public function exam(): BelongsTo
     {
         return $this->belongsTo(Exam::class);
     }
 
+    /**
+     * @return BelongsTo<Grade, $this>
+     */
     public function grade(): BelongsTo
     {
         return $this->belongsTo(Grade::class);

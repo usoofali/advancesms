@@ -19,20 +19,22 @@
             })();
         </script>
 
-        {{-- Inline style to set the HTML background color based on our theme in app.css --}}
+        {{-- Inline style to set the HTML background color and color-scheme based on our theme in app.css --}}
         <style>
             html {
+                color-scheme: light;
                 background-color: oklch(1 0 0);
             }
 
             html.dark {
+                color-scheme: dark;
                 background-color: oklch(0.145 0 0);
             }
         </style>
 
-        <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+        <link rel="icon" href="{{ config('theme.favicon_ico') }}" sizes="any">
+        <link rel="icon" href="{{ config('theme.favicon_svg') }}" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="{{ config('theme.apple_touch_icon') }}">
 
         @fonts
 

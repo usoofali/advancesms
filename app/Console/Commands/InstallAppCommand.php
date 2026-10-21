@@ -69,7 +69,7 @@ class InstallAppCommand extends Command
         // 5. Institutional & Admin Customization
         $schoolName = $this->option('school-name');
         if (! $schoolName && ! $this->option('no-interaction')) {
-            $schoolName = $this->ask('Enter School Name', 'Government Science Academy Gusau');
+            $schoolName = $this->ask('Enter School Name', 'YUM Academy');
         } elseif (! $schoolName) {
             $schoolName = 'School Management System';
         }
@@ -122,6 +122,7 @@ class InstallAppCommand extends Command
                 'last_name' => 'Superadmin',
                 'role' => UserRole::SUPERADMIN,
                 'is_active' => true,
+                'email_verified_at' => now(),
             ]
         );
         $admin->syncRoles([UserRole::SUPERADMIN->value]);

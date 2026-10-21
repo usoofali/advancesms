@@ -27,6 +27,9 @@ class Grade extends Model
         ];
     }
 
+    /**
+     * @return HasMany<StudentMark, $this>
+     */
     public function studentMarks(): HasMany
     {
         return $this->hasMany(StudentMark::class);
@@ -37,8 +40,18 @@ class Grade extends Model
      */
     public static function forScore(float $score): ?self
     {
-        return static::where('mark_from', '<=', $score)
-            ->where('mark_to', '>=', $score)
+        $rounded = round($score, 2);
+
+        $grade = static::where('mark_from', '<=', $rounded)
+            ->where('mark_to', '>=', $rounded)
             ->first();
+
+        if ($grade) {
+            return $grade;
+        }
+
+        return static::where('mark_from', '<=', $rounded)
+            ->orderByDesc('mark_from')
+            ->first() ?? static::orderBy('mark_from')->first();
     }
 }

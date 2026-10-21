@@ -20,6 +20,11 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            school?: import('@/types/school').SchoolSetting | null;
+            academic?: {
+                current_session: import('@/types/academic').AcademicSession | null;
+                current_term: import('@/types/academic').AcademicTerm | null;
+            } | null;
             [key: string]: unknown;
         };
     }

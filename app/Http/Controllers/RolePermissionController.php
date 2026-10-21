@@ -66,13 +66,14 @@ class RolePermissionController extends Controller
         /** @var array{name: string, display_name: string, description: ?string, permissions?: array<string>} $validated */
         $validated = $request->validated();
 
-        $role = Role::create([
+        $role = new Role([
             'name' => $validated['name'],
             'display_name' => $validated['display_name'],
             'description' => $validated['description'] ?? null,
             'guard_name' => 'web',
             'is_system' => false,
         ]);
+        $role->save();
 
         if (! empty($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);

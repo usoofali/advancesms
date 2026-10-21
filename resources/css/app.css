@@ -90,6 +90,7 @@
 }
 
 :root {
+    color-scheme: light;
     --background: hsl(0 0% 100%);
     --foreground: hsl(0 0% 3.9%);
     --card: hsl(0 0% 100%);
@@ -127,6 +128,7 @@
 }
 
 .dark {
+    color-scheme: dark;
     --background: hsl(0 0% 3.9%);
     --foreground: hsl(0 0% 98%);
     --card: hsl(0 0% 3.9%);
@@ -168,5 +170,208 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+
+    /* Universal form control theming: prevents white popup/options glitch on dark mode and provides modern custom chevron */
+    select {
+        color-scheme: light;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.65rem center;
+        background-repeat: no-repeat;
+        background-size: 1.2em 1.2em;
+        padding-right: 2.25rem;
+        @apply bg-background text-foreground border-input rounded-md transition-colors duration-150;
+    }
+    .dark select {
+        color-scheme: dark;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        @apply bg-background text-foreground border-input;
+    }
+    select:focus {
+        @apply outline-none ring-2 ring-ring/40 border-ring;
+    }
+    select option {
+        @apply bg-background text-foreground;
+        padding: 0.5rem 0.75rem;
+    }
+    .dark select option {
+        background-color: hsl(0 0% 10%) !important;
+        color: hsl(0 0% 98%) !important;
+    }
+}
+
+/* Subtle Micro-Dot Matrix Texture with Ambient Spotlight */
+.app-textured-bg {
+    background-color: var(--background);
+    background-image:
+        radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.04) 0%, transparent 600px),
+        radial-gradient(rgba(15, 23, 42, 0.038) 1px, transparent 1px);
+    background-size: 100% 600px, 24px 24px;
+    background-attachment: fixed;
+}
+
+.dark .app-textured-bg {
+    background-color: var(--background);
+    background-image:
+        radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 650px),
+        radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 100% 650px, 24px 24px;
+    background-attachment: fixed;
+}
+
+/* Reusable themed select utility */
+.form-select-themed {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+    padding-right: 2rem;
+}
+
+.dark .form-select-themed {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+}
+
+/* ========================================================================= */
+/* UNIVERSAL PRINT ENGINE (Clean White Paper & Zero Dark Ink Waste)          */
+/* ========================================================================= */
+@media print {
+    /* Universal Default Document Page Setup */
+    @page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
+    /* 0. Neutralize all CSS custom properties so dark mode tokens resolve to black-on-white */
+    :root,
+    .dark {
+        color-scheme: light !important;
+        --background: hsl(0 0% 100%) !important;
+        --foreground: hsl(0 0% 3.9%) !important;
+        --card: hsl(0 0% 100%) !important;
+        --card-foreground: hsl(0 0% 3.9%) !important;
+        --popover: hsl(0 0% 100%) !important;
+        --popover-foreground: hsl(0 0% 3.9%) !important;
+        --primary: hsl(0 0% 9%) !important;
+        --primary-foreground: hsl(0 0% 98%) !important;
+        --secondary: hsl(0 0% 92.1%) !important;
+        --secondary-foreground: hsl(0 0% 9%) !important;
+        --muted: hsl(0 0% 96.1%) !important;
+        --muted-foreground: hsl(0 0% 35%) !important;
+        --accent: hsl(0 0% 96.1%) !important;
+        --accent-foreground: hsl(0 0% 9%) !important;
+        --border: hsl(0 0% 80%) !important;
+        --input: hsl(0 0% 80%) !important;
+    }
+
+    /* 1. Neutralize background to pure white paper & black ink */
+    html,
+    html.dark,
+    body,
+    #app,
+    main,
+    [data-slot="sidebar-inset"],
+    .app-textured-bg {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        background-image: none !important;
+        color: #000000 !important;
+        color-scheme: light !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+    }
+
+    /* 2. Reset Layout Containers to visible & full width so page is never hidden or clipped */
+    [data-slot="sidebar-wrapper"] {
+        display: block !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    [data-slot="sidebar-inset"],
+    main {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    /* 2b. Prevent scroll container clipping during print */
+    .overflow-x-clip,
+    .overflow-x-auto,
+    .overflow-hidden {
+        overflow: visible !important;
+    }
+
+    /* 3. Strip dark and textured backgrounds from cards, containers and tables */
+    .bg-card,
+    .bg-muted,
+    .bg-background,
+    .bg-sidebar,
+    .dark .bg-card,
+    .dark .bg-muted,
+    .dark .bg-background {
+        background-color: #ffffff !important;
+        background-image: none !important;
+        color: #000000 !important;
+    }
+
+    /* 4. Hide ONLY navigation chrome, sidebars, headers and interactive controls */
+    [data-slot="sidebar"],
+    [data-slot="sidebar-trigger"],
+    [data-sidebar="sidebar"],
+    [data-slot="sidebar-inset"] > header,
+    .no-print,
+    .print\:hidden,
+    .toaster,
+    [data-sonner-toaster] {
+        display: none !important;
+    }
+
+    /* 5. Force print-visible elements to display (overriding .hidden in cascade) */
+    .print\:block {
+        display: block !important;
+    }
+    .print\:flex {
+        display: flex !important;
+    }
+    .print\:inline-block {
+        display: inline-block !important;
+    }
+    .print\:grid {
+        display: grid !important;
+    }
+
+    /* 6. Table optimization for pagination and page breaks */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    thead {
+        display: table-header-group !important;
+    }
+    tr {
+        page-break-inside: avoid !important;
+    }
+    th, td {
+        border-color: #d1d5db !important;
+        color: #000000 !important;
+    }
+
+    /* 7. Zero out box shadows and text shadows */
+    * {
+        box-shadow: none !important;
+        text-shadow: none !important;
     }
 }

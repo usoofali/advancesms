@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { LogOut, Settings } from '@lucide/vue';
+import { Globe, LogOut, Palette, Settings } from '@lucide/vue';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -8,7 +8,8 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
-import { logout } from '@/routes';
+import { home, logout } from '@/routes';
+import { edit as appearanceEdit } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -35,6 +36,12 @@ defineProps<Props>();
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />
                 Settings
+            </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
+            <Link class="block w-full cursor-pointer" :href="appearanceEdit()" prefetch>
+                <Palette class="mr-2 h-4 w-4" />
+                Appearance
             </Link>
         </DropdownMenuItem>
     </DropdownMenuGroup>

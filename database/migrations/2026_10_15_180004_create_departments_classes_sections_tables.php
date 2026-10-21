@@ -20,16 +20,16 @@ return new class extends Migration
 
         Schema::create('classes', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 50)->unique()->comment('JSS 1, JSS 2, JSS 3, SS 1, SS 2, SS 3');
-            $table->unsignedTinyInteger('level_order')->comment('1 for JSS 1 up to 6 for SS 3 for auto-promotion');
-            $table->enum('stage', ['junior_secondary', 'senior_secondary']);
+            $table->string('name', 50)->unique()->comment('e.g., Nursery 1, Primary 1, JSS 1, SS 1, etc.');
+            $table->unsignedTinyInteger('level_order')->comment('Numeric order for class sequence and progression');
+            $table->string('stage', 50)->comment('e.g., kindergarten, nursery, primary, junior_secondary, senior_secondary, or custom');
             $table->timestamps();
         });
 
         Schema::create('sections', function (Blueprint $table) {
             $table->id();
             $table->foreignId('class_id')->constrained('classes')->cascadeOnDelete();
-            $table->string('name', 50)->comment('A, B, C, D, etc.');
+            $table->string('name', 50)->comment('e.g., A, B, Red, Green, Diamond, 1, etc.');
             $table->unsignedSmallInteger('capacity')->default(60);
             $table->timestamps();
 

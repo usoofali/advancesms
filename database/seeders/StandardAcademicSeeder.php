@@ -2,12 +2,15 @@
 
 namespace Database\Seeders;
 
-use App\Enums\SecondaryStage;
+use App\Enums\EducationalStage;
 use App\Enums\UserRole;
 use App\Models\AcademicSession;
 use App\Models\AcademicTerm;
 use App\Models\Department;
 use App\Models\Exam;
+use App\Models\FrontendAnnouncement;
+use App\Models\FrontendFaq;
+use App\Models\FrontendSlider;
 use App\Models\Grade;
 use App\Models\SchoolClass;
 use App\Models\SchoolSetting;
@@ -27,12 +30,12 @@ class StandardAcademicSeeder extends Seeder
         // 1. Roles & Permissions Initialization
         $this->call(RolePermissionSeeder::class);
 
-        // 2. Institutional White-Label Settings
+        // 2. Institutional White-Label Settings & CMS Profile
         SchoolSetting::updateOrCreate(
             ['id' => 1],
             [
-                'school_name' => 'Government Science Academy Gusau',
-                'school_code' => 'GSSS-GSA',
+                'school_name' => 'YUM Academy',
+                'school_code' => 'YUM-SA',
                 'motto' => 'Knowledge, Character, and Scientific Excellence',
                 'address' => 'Zaria Road, Gusau, Zamfara State, Nigeria',
                 'phone' => '+234 803 123 4567',
@@ -40,6 +43,55 @@ class StandardAcademicSeeder extends Seeder
                 'currency_symbol' => '₦',
                 'currency_code' => 'NGN',
                 'principal_name' => 'Dr. Ibrahim Gusau',
+                'about_text' => 'Established with a vision for academic rigor and moral uprightness, YUM Academy provides a holistic secondary education that equips students for global competitiveness in science, technology, arts, and leadership.',
+                'mission' => 'To provide accessible, high-quality secondary education grounded in scientific curiosity, ethical leadership, and academic discipline.',
+                'vision' => 'To be a premier institution recognized for producing innovative scholars, ethical innovators, and disciplined leaders.',
+                'core_values' => ['Academic Excellence', 'Scientific Innovation', 'Integrity & Discipline', 'Community Leadership'],
+                'principal_message' => 'Welcome to YUM Academy. Our committed faculty, robust curriculum, and state-of-the-art learning environments empower every young mind to realize their fullest potential.',
+                'office_hours' => 'Mon - Fri: 8:00 AM - 3:30 PM',
+                'social_links' => [
+                    'facebook' => 'https://facebook.com',
+                    'x_twitter' => 'https://x.com',
+                    'instagram' => 'https://instagram.com',
+                ],
+            ]
+        );
+
+        // Minimal Public CMS Base Records
+        FrontendSlider::updateOrCreate(
+            ['title' => 'Inspiring Academic & Scientific Excellence'],
+            [
+                'subtitle' => 'Nurturing innovative minds, ethical character, and global leadership in Northern Nigeria.',
+                'badge' => 'Welcome to YUM-SA',
+                'primary_button_text' => 'Explore Academics',
+                'primary_button_url' => '/academics',
+                'secondary_button_text' => 'Contact Us',
+                'secondary_button_url' => '/contact',
+                'sort_order' => 1,
+                'is_active' => true,
+            ]
+        );
+
+        FrontendAnnouncement::updateOrCreate(
+            ['slug' => 'welcome-to-new-academic-session'],
+            [
+                'title' => 'Welcome to the New Academic Session',
+                'category' => 'general',
+                'summary' => 'Orientation schedule and commencement of lectures for all returning and newly admitted students.',
+                'content' => "We are excited to welcome all students, teachers, and parents to the new academic term. Please ensure all registrations and class allocations are finalized before the close of the week.\n\nStudents are expected to be in full official uniform and adhere strictly to institutional routines.",
+                'is_pinned' => true,
+                'is_published' => true,
+                'published_at' => now(),
+            ]
+        );
+
+        FrontendFaq::updateOrCreate(
+            ['question' => 'How can prospective parents apply for admission?'],
+            [
+                'category' => 'Admissions',
+                'answer' => 'Prospective candidates can obtain application forms at the administrative office during office hours (Mon - Fri: 8:00 AM - 3:30 PM) or download the syllabus and prospectus from the Academics page.',
+                'sort_order' => 1,
+                'is_published' => true,
             ]
         );
 
@@ -54,6 +106,7 @@ class StandardAcademicSeeder extends Seeder
                 'last_name' => 'Superadmin',
                 'role' => UserRole::SUPERADMIN,
                 'is_active' => true,
+                'email_verified_at' => now(),
             ]
         );
         $admin->syncRoles([UserRole::SUPERADMIN->value]);
@@ -122,12 +175,12 @@ class StandardAcademicSeeder extends Seeder
 
         // 5. Classes and Sections
         $classConfigs = [
-            ['name' => 'JSS 1', 'level' => 1, 'stage' => SecondaryStage::JUNIOR_SECONDARY],
-            ['name' => 'JSS 2', 'level' => 2, 'stage' => SecondaryStage::JUNIOR_SECONDARY],
-            ['name' => 'JSS 3', 'level' => 3, 'stage' => SecondaryStage::JUNIOR_SECONDARY],
-            ['name' => 'SS 1', 'level' => 4, 'stage' => SecondaryStage::SENIOR_SECONDARY],
-            ['name' => 'SS 2', 'level' => 5, 'stage' => SecondaryStage::SENIOR_SECONDARY],
-            ['name' => 'SS 3', 'level' => 6, 'stage' => SecondaryStage::SENIOR_SECONDARY],
+            ['name' => 'JSS 1', 'level' => 1, 'stage' => EducationalStage::JUNIOR_SECONDARY->value],
+            ['name' => 'JSS 2', 'level' => 2, 'stage' => EducationalStage::JUNIOR_SECONDARY->value],
+            ['name' => 'JSS 3', 'level' => 3, 'stage' => EducationalStage::JUNIOR_SECONDARY->value],
+            ['name' => 'SS 1', 'level' => 4, 'stage' => EducationalStage::SENIOR_SECONDARY->value],
+            ['name' => 'SS 2', 'level' => 5, 'stage' => EducationalStage::SENIOR_SECONDARY->value],
+            ['name' => 'SS 3', 'level' => 6, 'stage' => EducationalStage::SENIOR_SECONDARY->value],
         ];
 
         $classesMap = [];
@@ -141,9 +194,9 @@ class StandardAcademicSeeder extends Seeder
             );
             $classesMap[$cfg['name']] = $class;
 
-            foreach (['A', 'B', 'C', 'D'] as $arm) {
+            foreach (['A', 'B', 'C', 'D'] as $sectionName) {
                 Section::updateOrCreate(
-                    ['class_id' => $class->id, 'name' => $arm],
+                    ['class_id' => $class->id, 'name' => $sectionName],
                     ['capacity' => 60]
                 );
             }
@@ -180,7 +233,6 @@ class StandardAcademicSeeder extends Seeder
                 [
                     'name' => $s['name'],
                     'department_id' => $s['dept'],
-                    'is_elective' => false,
                 ]
             );
 

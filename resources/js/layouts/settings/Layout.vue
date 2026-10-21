@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { Building2, Palette, Shield, User } from '@lucide/vue';
+import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -7,23 +9,45 @@ import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
+import { edit as editSchool } from '@/routes/school-settings';
 import { edit as editSecurity } from '@/routes/security';
 import type { NavItem } from '@/types';
 
-const sidebarNavItems: NavItem[] = [
-    {
-        title: 'Profile',
-        href: editProfile(),
-    },
-    {
-        title: 'Security',
-        href: editSecurity(),
-    },
-    {
-        title: 'Appearance',
-        href: editAppearance(),
-    },
-];
+const page = usePage();
+
+const sidebarNavItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [
+        {
+            title: 'Profile',
+            href: editProfile(),
+            icon: User,
+        },
+        {
+            title: 'Security',
+            href: editSecurity(),
+            icon: Shield,
+        },
+        {
+            title: 'Appearance',
+            href: editAppearance(),
+            icon: Palette,
+        },
+    ];
+
+    const permissions = page.props.auth?.permissions as string[] | undefined;
+    const roles = page.props.auth?.roles as string[] | undefined;
+    const isSuperAdmin = permissions?.includes('*') || roles?.includes('superadmin');
+
+    if (isSuperAdmin || permissions?.includes('school_settings.view')) {
+        items.push({
+            title: 'School Profile',
+            href: editSchool(),
+            icon: Building2,
+        });
+    }
+
+    return items;
+});
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
 </script>
@@ -32,7 +56,7 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
     <div class="px-4 py-6">
         <Heading
             title="Settings"
-            description="Manage your profile and account settings"
+            description="Manage your profile, institutional branding, and account settings"
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
@@ -46,8 +70,8 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
                         :key="toUrl(item.href)"
                         variant="ghost"
                         :class="[
-                            'w-full justify-start',
-                            { 'bg-muted': isCurrentOrParentUrl(item.href) },
+                            'w-full justify-start gap-2',
+                            { 'bg-muted font-medium': isCurrentOrParentUrl(item.href) },
                         ]"
                         as-child
                     >
@@ -61,8 +85,8 @@ const { isCurrentOrParentUrl } = useCurrentUrl();
 
             <Separator class="my-6 lg:hidden" />
 
-            <div class="flex-1 md:max-w-2xl">
-                <section class="max-w-xl space-y-12">
+            <div class="flex-1 md:max-w-4xl">
+                <section class="max-w-4xl space-y-12">
                     <slot />
                 </section>
             </div>

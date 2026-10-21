@@ -169,31 +169,31 @@ final class RolePermissionSeeder extends Seeder
             ],
 
             // -------------------------------------------------------------------------
-            // 6. Sections / Arms (Section)
+            // 6. Sections (Section)
             // -------------------------------------------------------------------------
             [
                 'name' => 'sections.view',
-                'display_name' => 'View Sections (Arms)',
+                'display_name' => 'View Sections',
                 'group' => 'Classes & Sections',
-                'description' => 'Allows viewing class arms (e.g. Arm A, B, C, D) and student capacity limits.',
+                'description' => 'Allows viewing class sections (e.g. Section A, Red, Green) and student capacity limits.',
             ],
             [
                 'name' => 'sections.create',
-                'display_name' => 'Create Section (Arm)',
+                'display_name' => 'Create Section',
                 'group' => 'Classes & Sections',
-                'description' => 'Allows creating new class arms and assigning maximum student seat capacities.',
+                'description' => 'Allows creating new class sections and assigning maximum student seat capacities.',
             ],
             [
                 'name' => 'sections.update',
-                'display_name' => 'Update Section (Arm)',
+                'display_name' => 'Update Section',
                 'group' => 'Classes & Sections',
-                'description' => 'Allows changing section names, room numbers, and capacity limits.',
+                'description' => 'Allows changing section names and student capacity limits.',
             ],
             [
                 'name' => 'sections.delete',
-                'display_name' => 'Delete Section (Arm)',
+                'display_name' => 'Delete Section',
                 'group' => 'Classes & Sections',
-                'description' => 'Allows removing class arms that contain no active student enrollments.',
+                'description' => 'Allows removing class sections that contain no active student enrollments.',
             ],
 
             // -------------------------------------------------------------------------
@@ -293,7 +293,7 @@ final class RolePermissionSeeder extends Seeder
                 'name' => 'teacher_subject_assignments.create',
                 'display_name' => 'Assign Teacher to Subject',
                 'group' => 'Teachers & Staff',
-                'description' => 'Allows assigning a teacher to teach a subject in an arm with mark entry and attendance privileges.',
+                'description' => 'Allows assigning a teacher to teach a subject in a section with mark entry and attendance privileges.',
             ],
             [
                 'name' => 'teacher_subject_assignments.update',
@@ -306,6 +306,34 @@ final class RolePermissionSeeder extends Seeder
                 'display_name' => 'Revoke Teacher Allocation',
                 'group' => 'Teachers & Staff',
                 'description' => 'Allows unassigning a teacher from a subject and class section.',
+            ],
+
+            // -------------------------------------------------------------------------
+            // 10b. Teacher & Staff Attendance (TeacherAttendance)
+            // -------------------------------------------------------------------------
+            [
+                'name' => 'teacher_attendances.view',
+                'display_name' => 'View Teacher Attendance Register & Reports',
+                'group' => 'Teachers & Staff',
+                'description' => 'Allows inspecting teacher attendance records, daily register sheets, and staff performance reports.',
+            ],
+            [
+                'name' => 'teacher_attendances.take',
+                'display_name' => 'Record Teacher Attendance',
+                'group' => 'Teachers & Staff',
+                'description' => 'Allows recording daily weekday morning attendance for teaching staff.',
+            ],
+            [
+                'name' => 'teacher_attendances.update',
+                'display_name' => 'Update Teacher Attendance',
+                'group' => 'Teachers & Staff',
+                'description' => 'Allows amending previously recorded teacher attendance statuses and remarks.',
+            ],
+            [
+                'name' => 'teacher_attendances.delete',
+                'display_name' => 'Delete Teacher Attendance',
+                'group' => 'Teachers & Staff',
+                'description' => 'Allows deleting recorded teacher attendance records for a given date.',
             ],
 
             // -------------------------------------------------------------------------
@@ -617,6 +645,74 @@ final class RolePermissionSeeder extends Seeder
                 'group' => 'Access & Security',
                 'description' => 'Allows inspecting the complete directory of system permissions and operational descriptions.',
             ],
+
+            // -------------------------------------------------------------------------
+            // 21. System Activity & Audit Trail (ActivityLog)
+            // -------------------------------------------------------------------------
+            [
+                'name' => 'activity_logs.view',
+                'display_name' => 'View Activity & Audit Logs',
+                'group' => 'Access & Security',
+                'description' => 'Allows inspecting system-wide operational activity logs, changes, user actions, and security audit trails.',
+            ],
+            [
+                'name' => 'activity_logs.export',
+                'display_name' => 'Export Activity Logs',
+                'group' => 'Access & Security',
+                'description' => 'Allows downloading and exporting system activity records into CSV or audit files.',
+            ],
+            [
+                'name' => 'activity_logs.delete',
+                'display_name' => 'Delete Activity Logs',
+                'group' => 'Access & Security',
+                'description' => 'Allows permanently deleting or purging individual or batch activity audit trail records.',
+            ],
+
+            // -------------------------------------------------------------------------
+            // 21. Website CMS & Public Content (Frontend)
+            // -------------------------------------------------------------------------
+            [
+                'name' => 'frontend_cms.view',
+                'display_name' => 'View Website CMS',
+                'group' => 'Website CMS',
+                'description' => 'Allows viewing the institutional website content, sliders, galleries, FAQs, and contact inquiries.',
+            ],
+            [
+                'name' => 'frontend_cms.update',
+                'display_name' => 'Manage Website CMS',
+                'group' => 'Website CMS',
+                'description' => 'Allows managing landing page hero sliders, campus gallery photos, FAQs, and public school profile.',
+            ],
+            [
+                'name' => 'announcements.view',
+                'display_name' => 'View Announcements',
+                'group' => 'Website CMS',
+                'description' => 'Allows viewing all public institutional announcements, circulars, and notices.',
+            ],
+            [
+                'name' => 'announcements.create',
+                'display_name' => 'Create Announcement',
+                'group' => 'Website CMS',
+                'description' => 'Allows drafting and publishing announcements with file attachments.',
+            ],
+            [
+                'name' => 'announcements.update',
+                'display_name' => 'Update Announcement',
+                'group' => 'Website CMS',
+                'description' => 'Allows editing existing public announcements and circular attachments.',
+            ],
+            [
+                'name' => 'announcements.delete',
+                'display_name' => 'Delete Announcement',
+                'group' => 'Website CMS',
+                'description' => 'Allows unpublishing and permanently deleting announcements.',
+            ],
+            [
+                'name' => 'inquiries.manage',
+                'display_name' => 'Manage Inquiries',
+                'group' => 'Website CMS',
+                'description' => 'Allows viewing, updating statuses, and adding administrative notes to contact inquiries.',
+            ],
         ];
 
         // 1. Seed or Update all permissions with display names, groups, and descriptions
@@ -696,6 +792,10 @@ final class RolePermissionSeeder extends Seeder
             'teachers.create',
             'teachers.update',
             'teachers.delete',
+            'teacher_attendances.view',
+            'teacher_attendances.take',
+            'teacher_attendances.update',
+            'teacher_attendances.delete',
             'teacher_subject_assignments.view',
             'teacher_subject_assignments.create',
             'teacher_subject_assignments.update',
@@ -739,6 +839,16 @@ final class RolePermissionSeeder extends Seeder
             'roles.update',
             'roles.assign',
             'permissions.view',
+            'activity_logs.view',
+            'activity_logs.export',
+            'activity_logs.delete',
+            'frontend_cms.view',
+            'frontend_cms.update',
+            'announcements.view',
+            'announcements.create',
+            'announcements.update',
+            'announcements.delete',
+            'inquiries.manage',
         ]);
 
         // 3. Examination Officer

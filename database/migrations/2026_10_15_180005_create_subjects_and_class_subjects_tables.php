@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
             $table->string('code', 20)->unique()->comment('e.g., MTH, ENG, PHY, CHM, BIO, HAUS');
             $table->string('name', 150)->unique()->comment('Mathematics, English Language, Physics, etc.');
-            $table->boolean('is_elective')->default(false);
             $table->timestamps();
         });
 

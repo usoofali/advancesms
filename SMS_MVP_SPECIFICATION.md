@@ -297,7 +297,6 @@ CREATE TABLE `subjects` (
     `department_id` BIGINT UNSIGNED NULL,
     `code` VARCHAR(20) NOT NULL UNIQUE COMMENT 'e.g., MTH, ENG, PHY, CHM, BIO, HAUS',
     `name` VARCHAR(150) NOT NULL UNIQUE COMMENT 'Mathematics, English Language, Physics, etc.',
-    `is_elective` BOOLEAN NOT NULL DEFAULT FALSE,
     `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`department_id`) REFERENCES `departments`(`id`) ON DELETE SET NULL

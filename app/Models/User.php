@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\Gender;
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -43,7 +42,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
+class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
@@ -64,6 +63,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         'avatar',
         'is_active',
         'legacy_id',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -84,10 +84,22 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
-            'role' => UserRole::class,
             'gender' => Gender::class,
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Role attribute supporting standard UserRole enums and custom Spatie role names.
+     *
+     * @return Attribute<UserRole|string, UserRole|string>
+     */
+    protected function role(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => is_string($value) ? (UserRole::tryFrom($value) ?? $value) : $value,
+            set: fn ($value) => $value instanceof UserRole ? $value->value : (string) $value,
+        );
     }
 
     /**
@@ -149,16 +161,25 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     |--------------------------------------------------------------------------
     */
 
+    /**
+     * @return HasOne<Student, $this>
+     */
     public function student(): HasOne
     {
         return $this->hasOne(Student::class);
     }
 
+    /**
+     * @return HasOne<Teacher, $this>
+     */
     public function teacher(): HasOne
     {
         return $this->hasOne(Teacher::class);
     }
 
+    /**
+     * @return HasOne<Guardian, $this>
+     */
     public function guardian(): HasOne
     {
         return $this->hasOne(Guardian::class);

@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AcademicSession;
+use App\Models\AcademicTerm;
+use App\Models\SchoolSetting;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -44,6 +47,16 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $request->user() ? ($request->user()->isSuperAdmin() ? ['*'] : $request->user()->getAllPermissions()->pluck('name')) : [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'school' => fn () => rescue(fn () => SchoolSetting::current(), null, false),
+            'academic' => fn () => [
+                'current_session' => rescue(fn () => AcademicSession::current(), null, false),
+                'current_term' => rescue(fn () => AcademicTerm::current(), null, false),
+            ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+                'message' => fn () => $request->session()->get('message'),
+            ],
         ];
     }
 }
