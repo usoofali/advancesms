@@ -164,7 +164,7 @@ class Student extends Model
 
     /**
      * Generate the next sequential admission number for the school.
-     * Pattern: {school_code}/{0001} or {school_code}-0001 (based on school setting).
+     * Pattern: {school_code}/{00001} or {school_code}-00001 (based on school setting).
      */
     public static function generateNextAdmissionNumber(?string $schoolCode = null): string
     {
@@ -185,7 +185,7 @@ class Student extends Model
         }
 
         do {
-            $candidate = sprintf('%s/%04d', $schoolCode, $sequence);
+            $candidate = sprintf('%s/%05d', $schoolCode, $sequence);
             $exists = static::query()->where('admission_number', $candidate)->exists();
             if ($exists) {
                 $sequence++;

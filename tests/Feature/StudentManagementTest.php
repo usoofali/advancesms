@@ -87,18 +87,18 @@ class StudentManagementTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHas('success');
 
-        $student = Student::where('admission_number', 'YUM-SA/0001')->first();
+        $student = Student::where('admission_number', 'YUM-SA/00001')->first();
         $this->assertNotNull($student);
         $this->assertSame('AMINA SULEIMAN', $student->user->name);
-        $this->assertSame('yum-sa0001@sms.com', $student->user->email);
-        $this->assertSame('yum-sa0001', $student->user->username);
+        $this->assertSame('yum-sa00001@sms.com', $student->user->email);
+        $this->assertSame('yum-sa00001', $student->user->username);
         $this->assertTrue(Hash::check('12345678', $student->user->password));
 
         $this->assertDatabaseHas('enrollments', [
             'student_id' => $student->id,
             'class_id' => $class->id,
             'section_id' => $section->id,
-            'roll_number' => 'YUM-SA/0001',
+            'roll_number' => 'YUM-SA/00001',
             'status' => EnrollmentStatus::ACTIVE->value,
         ]);
     }
@@ -442,5 +442,12 @@ class StudentManagementTest extends TestCase
             ->where('student.id', $student->id)
             ->where('student.admission_number', 'GSSS26-VIEW01')
         );
+    }
+
+    public function test_generate_next_admission_number_uses_five_digit_zero_padded_sequence(): void
+    {
+        $next = Student::generateNextAdmissionNumber('TEST-SCH');
+        $this->assertMatchesRegularExpression('/^TEST-SCH\/\d{5}$/', $next);
+        $this->assertSame('TEST-SCH/00001', $next);
     }
 }

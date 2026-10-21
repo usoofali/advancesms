@@ -1077,7 +1077,7 @@ const confirmDeleteStudent = () => {
                                 <Input
                                     id="admission_number"
                                     v-model="studentForm.admission_number"
-                                    placeholder="e.g. YUM-SA/0001"
+                                    placeholder="e.g. YUM-SA/00001"
                                     disabled
                                     readonly
                                     class="bg-muted/70 text-muted-foreground cursor-not-allowed font-mono select-none"
@@ -1191,7 +1191,7 @@ const confirmDeleteStudent = () => {
                                     id="email"
                                     v-model="studentForm.email"
                                     type="email"
-                                    placeholder="e.g. gsss0001@sms.com"
+                                    placeholder="e.g. gsss00001@sms.com"
                                 />
                                 <InputError :message="studentForm.errors.email" />
                             </div>
