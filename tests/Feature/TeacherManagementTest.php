@@ -408,4 +408,58 @@ class TeacherManagementTest extends TestCase
         $response2 = $this->actingAs($admin)->post(route('people.teachers.store'), $forbiddenGuardianPayload);
         $response2->assertSessionHasErrors(['role']);
     }
+
+    public function test_admin_can_directly_reset_teacher_password(): void
+    {
+        $admin = User::where('username', 'superadmin')->firstOrFail();
+        $user = User::factory()->create([
+            'role' => UserRole::TEACHER,
+            'password' => Hash::make('OldPassword123#'),
+        ]);
+        $user->assignRole(UserRole::TEACHER->value);
+        $teacher = Teacher::create([
+            'user_id' => $user->id,
+            'staff_id' => 'STAFF/2026/999',
+            'designation' => 'Teacher',
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('people.teachers.reset-password', $teacher), [
+            'password' => 'BrandNewPassword123#',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertTrue(Hash::check('BrandNewPassword123#', $teacher->user->fresh()->password));
+    }
+
+    public function test_reset_password_requires_minimum_length(): void
+    {
+        $admin = User::where('username', 'superadmin')->firstOrFail();
+        $user = User::factory()->create(['role' => UserRole::TEACHER]);
+        $user->assignRole(UserRole::TEACHER->value);
+        $teacher = Teacher::create([
+            'user_id' => $user->id,
+            'staff_id' => 'STAFF/2026/998',
+            'designation' => 'Teacher',
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('people.teachers.reset-password', $teacher), [
+            'password' => '12345',
+        ]);
+
+        $response->assertSessionHasErrors(['password']);
+    }
+
+    public function test_user_model_accessors_extract_first_and_last_name_when_only_full_name_is_present(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'BELLO AHMADU GUSAU',
+            'first_name' => null,
+            'last_name' => null,
+        ]);
+
+        $this->assertSame('BELLO', $user->first_name);
+        $this->assertSame('AHMADU GUSAU', $user->last_name);
+    }
 }

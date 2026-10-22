@@ -87,7 +87,7 @@ class TeacherController extends Controller
 
         $fullName = trim("{$validated['first_name']} {$validated['last_name']}");
         $username = $validated['username'] ?? strtolower(Str::slug($validated['staff_id'], '_'));
-        $password = $validated['password'] ?? 'password';
+        $password = $validated['password'] ?? '12345678';
         $roleName = $validated['role'] ?? UserRole::TEACHER->value;
 
         DB::transaction(function () use ($validated, $fullName, $username, $password, $roleName) {
@@ -167,6 +167,26 @@ class TeacherController extends Controller
         });
 
         return redirect()->back()->with('success', "Staff profile for '{$fullName}' updated successfully.");
+    }
+
+    /**
+     * Directly reset a staff member's password.
+     */
+    public function resetPassword(Request $request, Teacher $teacher): RedirectResponse
+    {
+        if (! $request->user()?->can('teachers.update')) {
+            abort(403, 'Unauthorized to reset staff passwords.');
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:6', 'max:100'],
+        ]);
+
+        $teacher->user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return redirect()->back()->with('success', "Password for '{$teacher->user->name}' ({$teacher->staff_id}) reset successfully.");
     }
 
     /**

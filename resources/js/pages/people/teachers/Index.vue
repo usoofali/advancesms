@@ -8,14 +8,19 @@ import {
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    Copy,
     Download,
     Edit2,
+    Eye,
+    EyeOff,
     GraduationCap,
+    KeyRound,
     Library,
     Mail,
     Phone,
     Plus,
     Printer,
+    RefreshCw,
     Search,
     Trash2,
     UserCheck,
@@ -38,6 +43,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
+    DialogContent,
     DialogDescription,
     DialogFooter,
     DialogHeader,
@@ -47,7 +53,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { destroy as destroyTeacher, index as peopleTeachersIndex, store as storeTeacher, update as updateTeacher } from '@/routes/people/teachers';
+import { destroy as destroyTeacher, index as peopleTeachersIndex, resetPassword as resetTeacherPassword, store as storeTeacher, update as updateTeacher } from '@/routes/people/teachers';
 import type { Department } from '@/types/academic';
 import type { RoleSummary, Teacher, TeacherStats } from '@/types/people';
 
@@ -267,17 +273,27 @@ const openEditTeacherModal = (teacher: Teacher) => {
     editingTeacher.value = teacher;
     teacherForm.clearErrors();
     teacherForm.role = getPrimaryRoleName(teacher);
-    teacherForm.first_name = teacher.user.first_name ?? '';
-    teacherForm.last_name = teacher.user.last_name ?? '';
+
+    // Ensure first_name and last_name are prefilled from user record or split from full name
+    let firstName = teacher.user.first_name ?? '';
+    let lastName = teacher.user.last_name ?? '';
+    if ((!firstName || !lastName) && teacher.user.name) {
+        const parts = teacher.user.name.trim().split(/\s+/);
+        if (!firstName) firstName = parts[0] || '';
+        if (!lastName) lastName = parts.slice(1).join(' ') || parts[0] || '';
+    }
+
+    teacherForm.first_name = firstName;
+    teacherForm.last_name = lastName;
     teacherForm.staff_id = teacher.staff_id;
-    teacherForm.gender = teacher.user.gender ?? 'male';
+    teacherForm.gender = (teacher.user.gender as 'male' | 'female') ?? 'male';
     teacherForm.department_id = teacher.department_id ?? '';
     teacherForm.designation = teacher.designation ?? 'Subject Teacher';
     teacherForm.qualification = teacher.qualification ?? '';
     teacherForm.email = teacher.user.email ?? '';
     teacherForm.phone = teacher.user.phone ?? '';
-    teacherForm.joining_date = teacher.joining_date ?? '';
-    teacherForm.is_active = teacher.user.is_active;
+    teacherForm.joining_date = teacher.joining_date ? teacher.joining_date.substring(0, 10) : '';
+    teacherForm.is_active = Boolean(teacher.user.is_active);
     teacherForm.password = '';
     isTeacherModalOpen.value = true;
 };
@@ -308,6 +324,63 @@ const submitTeacherForm = () => {
             },
         });
     }
+};
+
+// =========================================================================
+// RESET PASSWORD MODAL
+// =========================================================================
+const isResetPasswordModalOpen = ref(false);
+const resettingTeacher = ref<Teacher | null>(null);
+const showResetPassword = ref(false);
+
+const resetPasswordForm = useForm({
+    password: '12345678',
+});
+
+const openResetPasswordModal = (teacher: Teacher) => {
+    resettingTeacher.value = teacher;
+    resetPasswordForm.reset();
+    resetPasswordForm.clearErrors();
+    resetPasswordForm.password = '12345678';
+    showResetPassword.value = false;
+    isResetPasswordModalOpen.value = true;
+};
+
+const generateRandomPassword = () => {
+    const chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let pass = '';
+    for (let i = 0; i < 8; i++) {
+        pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    resetPasswordForm.password = pass;
+    showResetPassword.value = true;
+};
+
+const setPasswordDefault = () => {
+    resetPasswordForm.password = '12345678';
+};
+
+const copyResetPassword = () => {
+    if (!resetPasswordForm.password) return;
+    navigator.clipboard.writeText(resetPasswordForm.password);
+    toast.success('Password copied to clipboard.');
+};
+
+const submitResetPassword = () => {
+    if (!resettingTeacher.value) return;
+
+    resetPasswordForm.put(resetTeacherPassword.url({ teacher: resettingTeacher.value.id }), {
+        preserveScroll: true,
+        onSuccess: () => {
+            isResetPasswordModalOpen.value = false;
+            toast.success(`Password for ${resettingTeacher.value?.user.name} (${resettingTeacher.value?.staff_id}) reset successfully.`);
+            resettingTeacher.value = null;
+        },
+        onError: (errors) => {
+            const firstError = Object.values(errors)[0];
+            if (firstError) toast.error(firstError);
+        },
+    });
 };
 
 // =========================================================================
@@ -607,6 +680,16 @@ const confirmDeleteTeacher = () => {
                                         title="Edit Profile"
                                     >
                                         <Edit2 class="size-3.5" />
+                                    </Button>
+                                    <Button
+                                        v-if="canUpdateTeacher"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="size-8 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400"
+                                        @click="openResetPasswordModal(teacher)"
+                                        title="Reset Password Directly"
+                                    >
+                                        <KeyRound class="size-3.5" />
                                     </Button>
                                     <Button
                                         v-if="canDeleteTeacher"
@@ -915,7 +998,7 @@ const confirmDeleteTeacher = () => {
                     </div>
 
                     <p v-if="!editingTeacher" class="text-xs text-muted-foreground bg-muted/40 p-2.5 rounded border border-border">
-                        A user account with the selected role will be automatically created with password <code class="font-mono text-primary font-bold">password</code>.
+                        A user account with the selected role will be automatically created with password <code class="font-mono text-primary font-bold">12345678</code>.
                     </p>
 
                     <DialogFooter class="pt-4">
@@ -938,6 +1021,122 @@ const confirmDeleteTeacher = () => {
                     </DialogFooter>
                 </form>
             </DialogScrollContent>
+        </Dialog>
+
+        <!-- ================================================================= -->
+        <!-- RESET STAFF PASSWORD MODAL -->
+        <!-- ================================================================= -->
+        <Dialog :open="isResetPasswordModalOpen" @update:open="(val) => isResetPasswordModalOpen = val">
+            <DialogContent class="sm:max-w-md">
+                <form @submit.prevent="submitResetPassword">
+                    <DialogHeader>
+                        <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                            <KeyRound class="size-5" />
+                            <DialogTitle>Reset Staff Password</DialogTitle>
+                        </div>
+                        <DialogDescription>
+                            Directly set a new login password for
+                            <span class="font-semibold text-foreground">{{ resettingTeacher?.user.name }}</span>
+                            ({{ resettingTeacher?.staff_id }}).
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div class="space-y-4 py-4">
+                        <div class="p-3 rounded-lg bg-muted/60 border border-border text-xs space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Portal Username:</span>
+                                <span class="font-mono font-semibold text-foreground">{{ resettingTeacher?.user.username || '—' }}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-muted-foreground">Role:</span>
+                                <span class="font-medium text-foreground capitalize">{{ resettingTeacher ? getPrimaryRoleDisplayName(resettingTeacher) : '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <Label for="direct-reset-password">New Password *</Label>
+                            <div class="relative">
+                                <Input
+                                    id="direct-reset-password"
+                                    :type="showResetPassword ? 'text' : 'password'"
+                                    v-model="resetPasswordForm.password"
+                                    placeholder="Enter new password (min. 6 characters)..."
+                                    class="pr-10 font-mono"
+                                    required
+                                    minlength="6"
+                                />
+                                <button
+                                    type="button"
+                                    @click="showResetPassword = !showResetPassword"
+                                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                                    tabindex="-1"
+                                >
+                                    <EyeOff v-if="showResetPassword" class="size-4" />
+                                    <Eye v-else class="size-4" />
+                                </button>
+                            </div>
+                            <InputError :message="resetPasswordForm.errors.password" />
+
+                            <!-- Quick Action Shortcuts -->
+                            <div class="flex flex-wrap items-center gap-2 pt-1">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                                    @click="setPasswordDefault"
+                                >
+                                    Default: 12345678
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground"
+                                    @click="generateRandomPassword"
+                                >
+                                    <RefreshCw class="size-3" />
+                                    <span>Random</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-7 text-xs px-2 gap-1 text-muted-foreground hover:text-foreground"
+                                    @click="copyResetPassword"
+                                    :disabled="!resetPasswordForm.password"
+                                >
+                                    <Copy class="size-3" />
+                                    <span>Copy</span>
+                                </Button>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-muted-foreground">
+                            The staff member will be able to log in immediately with this new password.
+                        </p>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="isResetPasswordModalOpen = false"
+                            :disabled="resetPasswordForm.processing"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            :disabled="resetPasswordForm.processing || !resetPasswordForm.password"
+                            class="gap-2"
+                        >
+                            <Spinner v-if="resetPasswordForm.processing" class="size-4" />
+                            <span>Reset Password</span>
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
         </Dialog>
 
         <!-- ================================================================= -->

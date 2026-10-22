@@ -13,6 +13,7 @@ Route::middleware(['auth'])->prefix('people')->name('people.')->group(function (
     Route::get('teachers', [TeacherController::class, 'index'])->name('teachers.index');
     Route::post('teachers', [TeacherController::class, 'store'])->name('teachers.store');
     Route::put('teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
+    Route::put('teachers/{teacher}/reset-password', [TeacherController::class, 'resetPassword'])->name('teachers.reset-password');
     Route::delete('teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
 
     // Teacher Attendance Register & Reports

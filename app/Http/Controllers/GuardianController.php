@@ -88,7 +88,7 @@ class GuardianController extends Controller
 
             if (! empty($validated['create_user_account'])) {
                 $username = $this->generateUniqueUsername($validated['name'], $validated['username'] ?? null);
-                $password = $validated['password'] ?? 'password';
+                $password = $validated['password'] ?? '12345678';
 
                 $nameParts = explode(' ', trim($validated['name']), 2);
                 $firstName = $nameParts[0];
@@ -140,7 +140,7 @@ class GuardianController extends Controller
             // Enable portal account for existing guardian if not done initially
             if ($guardian->user === null && ! empty($validated['create_user_account'])) {
                 $username = $this->generateUniqueUsername($validated['name'], $validated['username'] ?? null);
-                $password = $validated['password'] ?? 'password';
+                $password = $validated['password'] ?? '12345678';
 
                 $nameParts = explode(' ', trim($validated['name']), 2);
                 $firstName = $nameParts[0];

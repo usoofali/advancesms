@@ -115,13 +115,26 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
-     * Mutator to guarantee uppercase first name.
+     * Mutator & accessor to guarantee uppercase first name with fallback to name string.
      *
      * @return Attribute<string|null, string|null>
      */
     protected function firstName(): Attribute
     {
         return Attribute::make(
+            get: function (?string $value) {
+                if ($value !== null && $value !== '') {
+                    return $value;
+                }
+                $rawName = $this->attributes['name'] ?? null;
+                if (! empty($rawName)) {
+                    $parts = preg_split('/\s+/', trim($rawName));
+
+                    return $parts[0] ?? null;
+                }
+
+                return null;
+            },
             set: fn (?string $value) => $value !== null ? mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value))) : null,
         );
     }
@@ -139,13 +152,31 @@ class User extends Authenticatable implements PasskeyUser
     }
 
     /**
-     * Mutator to guarantee uppercase last name.
+     * Mutator & accessor to guarantee uppercase last name with fallback to name string.
      *
      * @return Attribute<string|null, string|null>
      */
     protected function lastName(): Attribute
     {
         return Attribute::make(
+            get: function (?string $value) {
+                if ($value !== null && $value !== '') {
+                    return $value;
+                }
+                $rawName = $this->attributes['name'] ?? null;
+                if (! empty($rawName)) {
+                    $parts = preg_split('/\s+/', trim($rawName));
+                    if (count($parts) > 1) {
+                        array_shift($parts);
+
+                        return implode(' ', $parts);
+                    }
+
+                    return $parts[0] ?? null;
+                }
+
+                return null;
+            },
             set: fn (?string $value) => $value !== null ? mb_strtoupper(trim(preg_replace('/\s+/', ' ', $value))) : null,
         );
     }

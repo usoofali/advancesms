@@ -633,9 +633,15 @@ class MigrateLegacySmsCommand extends Command
 
             $gender = strtolower(trim($t->gender)) === 'female' ? Gender::FEMALE->value : Gender::MALE->value;
 
+            $nameParts = preg_split('/\s+/', trim($cleanName));
+            $firstName = $nameParts[0] ?? '';
+            $lastName = count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : $firstName;
+
             $userId = DB::table('users')->insertGetId([
                 'username' => $username,
                 'name' => $cleanName,
+                'first_name' => $firstName,
+                'last_name' => $lastName,
                 'email' => $email,
                 'password' => $t->password, // Retains raw 40-character legacy SHA-1 hash
                 'role' => UserRole::TEACHER->value,
@@ -705,9 +711,15 @@ class MigrateLegacySmsCommand extends Command
                 $admCounter++;
             }
 
+            $admNameParts = preg_split('/\s+/', trim($cleanName));
+            $admFirstName = $admNameParts[0] ?? '';
+            $admLastName = count($admNameParts) > 1 ? implode(' ', array_slice($admNameParts, 1)) : $admFirstName;
+
             $userId = DB::table('users')->insertGetId([
                 'username' => $adminUsername,
                 'name' => $cleanName,
+                'first_name' => $admFirstName,
+                'last_name' => $admLastName,
                 'email' => $email,
                 'password' => $adm->password, // Retains raw 40-character legacy SHA-1 hash
                 'role' => $roleName,
