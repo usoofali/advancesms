@@ -73,6 +73,14 @@ class MigrateLegacySmsCommand extends Command
 
     protected array $gradesCache = [];
 
+    protected int $caCount = 3;
+
+    protected bool $hasCa1 = false;
+
+    protected bool $hasCa2 = false;
+
+    protected bool $hasCa3 = false;
+
     /**
      * Execute the console command.
      */
@@ -135,6 +143,13 @@ class MigrateLegacySmsCommand extends Command
         $legacySchool = $legacy->table('schools')->first();
         $schoolTitle = $legacySchool->name ?? 'Unknown School';
         $this->line("School Identified: <info>{$schoolTitle}</info>");
+
+        // Detect continuous assessment column structure (some legacy SMS installations use 2 CAs instead of 3)
+        $this->hasCa1 = $legacy->getSchemaBuilder()->hasColumn('marks', 'ca1');
+        $this->hasCa2 = $legacy->getSchemaBuilder()->hasColumn('marks', 'ca2');
+        $this->hasCa3 = $legacy->getSchemaBuilder()->hasColumn('marks', 'ca3');
+        $this->caCount = $this->hasCa3 ? 3 : ($this->hasCa2 ? 2 : ($this->hasCa1 ? 1 : 1));
+        $this->line("Assessment Profile: <info>{$this->caCount} Continuous Assessment (CA) component(s) detected</info>");
         $this->newLine();
 
         $startTime = microtime(true);
@@ -306,6 +321,11 @@ class MigrateLegacySmsCommand extends Command
             $principalName = html_entity_decode(trim($principalTeacher->name));
         }
 
+        $maxCa1 = $this->caCount === 3 ? 10.00 : ($this->caCount === 2 ? 20.00 : 30.00);
+        $maxCa2 = $this->caCount >= 2 ? ($this->caCount === 3 ? 10.00 : 20.00) : 0.00;
+        $maxCa3 = $this->caCount === 3 ? 10.00 : 0.00;
+        $maxExam = $this->caCount === 3 ? 70.00 : ($this->caCount === 2 ? 60.00 : 70.00);
+
         SchoolSetting::updateOrCreate(
             ['id' => 1],
             [
@@ -318,11 +338,11 @@ class MigrateLegacySmsCommand extends Command
                 'currency_symbol' => $currency === 'USD' ? '$' : '₦',
                 'currency_code' => $currency ?: 'NGN',
                 'principal_name' => $principalName,
-                'ca_count' => 3,
-                'default_max_ca1' => 10.00,
-                'default_max_ca2' => 10.00,
-                'default_max_ca3' => 10.00,
-                'default_max_exam' => 70.00,
+                'ca_count' => $this->caCount,
+                'default_max_ca1' => $maxCa1,
+                'default_max_ca2' => $maxCa2,
+                'default_max_ca3' => $maxCa3,
+                'default_max_exam' => $maxExam,
                 'ca1_label' => '1st CA',
                 'ca2_label' => '2nd CA',
                 'ca3_label' => '3rd CA',
@@ -393,6 +413,11 @@ class MigrateLegacySmsCommand extends Command
             }
         }
 
+        $maxCa1 = $this->caCount === 3 ? 10.00 : ($this->caCount === 2 ? 20.00 : 30.00);
+        $maxCa2 = $this->caCount >= 2 ? ($this->caCount === 3 ? 10.00 : 20.00) : 0.00;
+        $maxCa3 = $this->caCount === 3 ? 10.00 : 0.00;
+        $maxExam = $this->caCount === 3 ? 70.00 : ($this->caCount === 2 ? 60.00 : 70.00);
+
         // Migrate Exams
         $legacyExams = $legacy->table('exams')->get();
         foreach ($legacyExams as $ex) {
@@ -404,11 +429,11 @@ class MigrateLegacySmsCommand extends Command
                 'academic_session_id' => $sessionId,
                 'academic_term_id' => $termId,
                 'name' => html_entity_decode(trim($ex->name)),
-                'ca_count' => 3,
-                'max_ca1' => 10.00,
-                'max_ca2' => 10.00,
-                'max_ca3' => 10.00,
-                'max_exam' => 70.00,
+                'ca_count' => $this->caCount,
+                'max_ca1' => $maxCa1,
+                'max_ca2' => $maxCa2,
+                'max_ca3' => $maxCa3,
+                'max_exam' => $maxExam,
                 'ca1_label' => '1st CA',
                 'ca2_label' => '2nd CA',
                 'ca3_label' => '3rd CA',
@@ -595,6 +620,17 @@ class MigrateLegacySmsCommand extends Command
             }
 
             $username = 'staff_'.str_pad((string) $t->id, 4, '0', STR_PAD_LEFT);
+            $baseUsername = $username;
+            $uCounter = 1;
+            while (DB::table('users')->where('username', $username)->exists()) {
+                $username = "{$baseUsername}_{$uCounter}";
+                $uCounter++;
+            }
+
+            if (DB::table('users')->where('email', $email)->exists()) {
+                $email = "staff_{$t->id}_{$email}";
+            }
+
             $gender = strtolower(trim($t->gender)) === 'female' ? Gender::FEMALE->value : Gender::MALE->value;
 
             $userId = DB::table('users')->insertGetId([
@@ -618,9 +654,17 @@ class MigrateLegacySmsCommand extends Command
                 'model_id' => $userId,
             ]);
 
+            $staffId = 'STAFF-'.str_pad((string) $t->id, 4, '0', STR_PAD_LEFT);
+            $baseStaffId = $staffId;
+            $stCounter = 1;
+            while (DB::table('teachers')->where('staff_id', $staffId)->exists()) {
+                $staffId = "{$baseStaffId}_{$stCounter}";
+                $stCounter++;
+            }
+
             DB::table('teachers')->insert([
                 'user_id' => $userId,
-                'staff_id' => 'STAFF-'.str_pad((string) $t->id, 4, '0', STR_PAD_LEFT),
+                'staff_id' => $staffId,
                 'department_id' => $this->departmentMap[$t->department_id] ?? null,
                 'designation' => html_entity_decode(trim($t->designation ?? 'Teacher')),
                 'joining_date' => '2020-01-01',
@@ -653,8 +697,16 @@ class MigrateLegacySmsCommand extends Command
                 $email = "admin_{$adm->id}_{$email}";
             }
 
+            $adminUsername = 'admin_'.$adm->id;
+            $baseAdminUsername = $adminUsername;
+            $admCounter = 1;
+            while (DB::table('users')->where('username', $adminUsername)->exists()) {
+                $adminUsername = "{$baseAdminUsername}_{$admCounter}";
+                $admCounter++;
+            }
+
             $userId = DB::table('users')->insertGetId([
-                'username' => 'admin_'.$adm->id,
+                'username' => $adminUsername,
                 'name' => $cleanName,
                 'email' => $email,
                 'password' => $adm->password, // Retains raw 40-character legacy SHA-1 hash
@@ -724,13 +776,21 @@ class MigrateLegacySmsCommand extends Command
             $cleanName = html_entity_decode(trim($s->name));
             // In Ekattor, users.email holds the true student admission number (e.g. GSSS25-00001)
             $admissionNo = trim($s->email) ?: trim($s->code);
+            $studentUsername = $admissionNo;
+            $baseStudentUsername = $studentUsername;
+            $sCounter = 1;
+            while (DB::table('users')->where('username', $studentUsername)->exists()) {
+                $studentUsername = "{$baseStudentUsername}_{$sCounter}";
+                $sCounter++;
+            }
+
             $gender = strtolower(trim($s->gender)) === 'female' ? Gender::FEMALE->value : Gender::MALE->value;
             $dob = ($s->birthday && $s->birthday !== 'NULL' && $s->birthday !== '0000-00-00')
                 ? date('Y-m-d', strtotime($s->birthday))
                 : null;
 
             $userId = DB::table('users')->insertGetId([
-                'username' => $admissionNo,
+                'username' => $studentUsername,
                 'name' => $cleanName,
                 'email' => null, // Null to prevent invalid email validation and unique index clashes
                 'password' => $s->password, // Retains raw 40-character legacy SHA-1 hash
@@ -750,9 +810,17 @@ class MigrateLegacySmsCommand extends Command
                 'model_id' => $userId,
             ];
 
+            $uniqueAdmissionNo = $admissionNo;
+            $baseAdmissionNo = $uniqueAdmissionNo;
+            $aCounter = 1;
+            while (DB::table('students')->where('admission_number', $uniqueAdmissionNo)->exists()) {
+                $uniqueAdmissionNo = "{$baseAdmissionNo}_{$aCounter}";
+                $aCounter++;
+            }
+
             $studentId = DB::table('students')->insertGetId([
                 'user_id' => $userId,
-                'admission_number' => $admissionNo,
+                'admission_number' => $uniqueAdmissionNo,
                 'admission_date' => '2024-09-01',
                 'date_of_birth' => $dob,
                 'guardian_id' => $this->guardianMap[$s->parent_id] ?? null,
@@ -841,16 +909,16 @@ class MigrateLegacySmsCommand extends Command
                     }
                     $processedMarksKeys[$markKey] = true;
 
-                    $ca1 = (float) $m->ca1;
-                    $ca2 = (float) $m->ca2;
-                    $ca3 = (float) $m->ca3;
-                    $examScore = (float) $m->exam;
+                    $ca1 = isset($m->ca1) ? (float) $m->ca1 : 0.00;
+                    $ca2 = isset($m->ca2) ? (float) $m->ca2 : 0.00;
+                    $ca3 = isset($m->ca3) ? (float) $m->ca3 : 0.00;
+                    $examScore = isset($m->exam) ? (float) $m->exam : (isset($m->exam_score) ? (float) $m->exam_score : 0.00);
 
                     // Sanitize legacy entry anomalies (clamping typos, negative scores, and integer overflows)
-                    $ca1 = max(0.00, $ca1 > 100 ? 10.00 : $ca1);
-                    $ca2 = max(0.00, $ca2 > 100 ? 10.00 : $ca2);
+                    $ca1 = max(0.00, $ca1 > 100 ? ($this->caCount === 3 ? 10.00 : 20.00) : $ca1);
+                    $ca2 = max(0.00, $ca2 > 100 ? ($this->caCount === 3 ? 10.00 : 20.00) : $ca2);
                     $ca3 = max(0.00, $ca3 > 100 ? 10.00 : $ca3);
-                    $examScore = max(0.00, $examScore > 100 ? 70.00 : $examScore);
+                    $examScore = max(0.00, $examScore > 100 ? ($this->caCount === 3 ? 70.00 : 60.00) : $examScore);
 
                     $totalScore = $ca1 + $ca2 + $ca3 + $examScore;
 
@@ -872,7 +940,7 @@ class MigrateLegacySmsCommand extends Command
                         'ca3' => $ca3,
                         'exam_score' => $examScore,
                         'grade_id' => $gradeId,
-                        'teacher_comment' => $m->comment ? html_entity_decode(trim($m->comment)) : null,
+                        'teacher_comment' => ! empty($m->comment) ? html_entity_decode(trim($m->comment)) : null,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ];
