@@ -69,10 +69,24 @@ class BroadsheetController extends Controller
         // School Settings Branding
         $school = SchoolSetting::current();
 
-        // Subjects for this class
+        // Exam Milestone
+        $exam = null;
+        if ($selectedSessionId && $selectedTermId) {
+            $exam = Exam::where('academic_session_id', $selectedSessionId)
+                ->where('academic_term_id', $selectedTermId)
+                ->first();
+        }
+
+        // Subjects for this class: either currently allocated in curriculum or had recorded marks in this specific term exam
         $subjects = Subject::query()
-            ->whereHas('classSubjects', function ($q) use ($selectedClassId) {
-                $q->where('class_id', $selectedClassId);
+            ->where(function ($query) use ($selectedClassId, $exam) {
+                $query->whereHas('classSubjects', fn ($q) => $q->where('class_id', $selectedClassId));
+                if ($exam) {
+                    $query->orWhereHas('studentMarks', function ($sm) use ($selectedClassId, $exam) {
+                        $sm->where('exam_id', $exam->id)
+                            ->whereHas('enrollment', fn ($e) => $e->where('class_id', $selectedClassId));
+                    });
+                }
             })
             ->orderBy('name')
             ->get(['id', 'name', 'code']);
@@ -80,14 +94,6 @@ class BroadsheetController extends Controller
         // Fallback: If no class subjects explicitly attached, get all subjects
         if ($subjects->isEmpty()) {
             $subjects = Subject::query()->orderBy('name')->get(['id', 'name', 'code']);
-        }
-
-        // Exam Milestone
-        $exam = null;
-        if ($selectedSessionId && $selectedTermId) {
-            $exam = Exam::where('academic_session_id', $selectedSessionId)
-                ->where('academic_term_id', $selectedTermId)
-                ->first();
         }
 
         $matrixRows = [];

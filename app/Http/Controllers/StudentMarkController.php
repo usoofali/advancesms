@@ -141,8 +141,14 @@ class StudentMarkController extends Controller
         $subjectsQuery = Subject::query()->orderBy('name');
 
         if ($selectedClassId) {
-            $subjectsQuery->whereHas('classSubjects', function ($q) use ($selectedClassId) {
-                $q->where('class_id', $selectedClassId);
+            $subjectsQuery->where(function ($query) use ($selectedClassId, $exam) {
+                $query->whereHas('classSubjects', fn ($q) => $q->where('class_id', $selectedClassId));
+                if ($exam) {
+                    $query->orWhereHas('studentMarks', function ($sm) use ($selectedClassId, $exam) {
+                        $sm->where('exam_id', $exam->id)
+                            ->whereHas('enrollment', fn ($e) => $e->where('class_id', $selectedClassId));
+                    });
+                }
             });
         }
 

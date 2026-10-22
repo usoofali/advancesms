@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BulkAssignClassSubjectsRequest;
 use App\Http\Requests\StoreClassSubjectRequest;
 use App\Http\Requests\UpdateClassSubjectRequest;
+use App\Models\AcademicSession;
+use App\Models\AcademicTerm;
 use App\Models\ClassSubject;
+use App\Models\Exam;
 use App\Models\SchoolClass;
 use App\Models\StudentMark;
 use App\Models\Subject;
@@ -63,27 +66,58 @@ class ClassSubjectController extends Controller
             abort(403, 'Unauthorized to remove subjects from class.');
         }
 
-        // Check if teachers are assigned to teach this subject in this class
-        $hasTeacherAssignments = TeacherSubjectAssignment::query()
+        $activeSession = AcademicSession::where('is_current', true)->first()
+            ?? AcademicSession::latest('id')->first();
+        $activeSessionId = $activeSession?->id;
+
+        $activeTerm = AcademicTerm::where('academic_session_id', $activeSessionId)
+            ->where('is_current', true)
+            ->first();
+        $activeTermId = $activeTerm?->id;
+
+        // Check if teachers are assigned to teach this subject in this class for the active term
+        $hasCurrentTeacherAssignments = TeacherSubjectAssignment::query()
             ->where('class_id', $classSubject->class_id)
             ->where('subject_id', $classSubject->subject_id)
+            ->when($activeSessionId, fn ($q) => $q->where('academic_session_id', $activeSessionId))
+            ->when($activeTermId, fn ($q) => $q->where('academic_term_id', $activeTermId))
             ->exists();
 
-        if ($hasTeacherAssignments) {
+        if ($hasCurrentTeacherAssignments) {
+            $termLabel = $activeTerm ? "in {$activeTerm->name}" : 'for the active term';
+
             return redirect()->back()->withErrors([
-                'error' => 'Cannot remove this subject because teachers are currently assigned to teach it in this class. Remove teacher allocations first.',
+                'error' => "Cannot remove this subject because teachers are currently assigned to teach it in this class {$termLabel}. Remove teacher allocations first.",
             ]);
         }
 
-        // Check if student marks are recorded for this subject in this class
-        $hasStudentMarks = StudentMark::query()
-            ->where('subject_id', $classSubject->subject_id)
-            ->whereHas('enrollment', fn ($q) => $q->where('class_id', $classSubject->class_id))
-            ->exists();
+        // Check if student marks are recorded for this subject in this class for the active term
+        $currentExam = null;
+        if ($activeSessionId && $activeTermId) {
+            $currentExam = Exam::where('academic_session_id', $activeSessionId)
+                ->where('academic_term_id', $activeTermId)
+                ->first();
+        }
 
-        if ($hasStudentMarks) {
+        $hasCurrentStudentMarks = false;
+        if ($currentExam) {
+            $hasCurrentStudentMarks = StudentMark::query()
+                ->where('subject_id', $classSubject->subject_id)
+                ->where('exam_id', $currentExam->id)
+                ->whereHas('enrollment', fn ($q) => $q->where('class_id', $classSubject->class_id))
+                ->exists();
+        } elseif ($activeSessionId) {
+            $hasCurrentStudentMarks = StudentMark::query()
+                ->where('subject_id', $classSubject->subject_id)
+                ->whereHas('enrollment', fn ($q) => $q->where('class_id', $classSubject->class_id)->where('academic_session_id', $activeSessionId))
+                ->exists();
+        }
+
+        if ($hasCurrentStudentMarks) {
+            $termLabel = $activeTerm ? "in {$activeTerm->name}" : 'in the current term';
+
             return redirect()->back()->withErrors([
-                'error' => 'Cannot remove this subject because student assessment scores are already recorded for it in this class.',
+                'error' => "Cannot remove this subject because student assessment scores are already recorded for it {$termLabel}. Clear marks for the active term first if you wish to remove it.",
             ]);
         }
 
