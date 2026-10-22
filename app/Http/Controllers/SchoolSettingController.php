@@ -141,6 +141,10 @@ class SchoolSettingController extends Controller
 
     public function storeSlider(Request $request): RedirectResponse
     {
+        if (! $request->user()?->can('school_settings.update') && ! $request->user()?->can('frontend_cms.update')) {
+            abort(403, 'Unauthorized to create hero slides.');
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:500'],
@@ -157,6 +161,7 @@ class SchoolSettingController extends Controller
         if ($request->hasFile('image')) {
             $validated['image_path'] = $request->file('image')?->store('sliders', 'public');
         }
+        unset($validated['image']);
 
         FrontendSlider::create($validated);
 
@@ -165,6 +170,10 @@ class SchoolSettingController extends Controller
 
     public function updateSlider(Request $request, FrontendSlider $slider): RedirectResponse
     {
+        if (! $request->user()?->can('school_settings.update') && ! $request->user()?->can('frontend_cms.update')) {
+            abort(403, 'Unauthorized to update hero slides.');
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:500'],
@@ -184,14 +193,19 @@ class SchoolSettingController extends Controller
             }
             $validated['image_path'] = $request->file('image')?->store('sliders', 'public');
         }
+        unset($validated['image']);
 
         $slider->update($validated);
 
         return redirect()->back()->with('success', 'Hero slide updated successfully.');
     }
 
-    public function destroySlider(FrontendSlider $slider): RedirectResponse
+    public function destroySlider(Request $request, FrontendSlider $slider): RedirectResponse
     {
+        if (! $request->user()?->can('school_settings.update') && ! $request->user()?->can('frontend_cms.update')) {
+            abort(403, 'Unauthorized to delete hero slides.');
+        }
+
         if ($slider->image_path && Storage::disk('public')->exists($slider->image_path)) {
             Storage::disk('public')->delete($slider->image_path);
         }

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\FrontendSlider;
 use App\Models\Grade;
 use App\Models\SchoolSetting;
 use App\Models\User;
@@ -323,5 +324,82 @@ class SchoolSettingTest extends TestCase
         $this->assertDatabaseMissing('grades', [
             'id' => $grade->id,
         ]);
+    }
+
+    public function test_admin_can_create_update_and_delete_hero_slider(): void
+    {
+        Storage::fake('public');
+        $admin = User::where('username', 'superadmin')->firstOrFail();
+
+        // 1. Create Slider
+        $image = UploadedFile::fake()->image('banner1.jpg', 1920, 1080);
+        $createResponse = $this->actingAs($admin)->post(route('school-settings.sliders.store'), [
+            'title' => 'Empowering Future Leaders',
+            'subtitle' => 'Excellence in education and innovation.',
+            'badge' => 'Admissions Open',
+            'primary_button_text' => 'Apply Now',
+            'primary_button_url' => '/admissions',
+            'secondary_button_text' => 'Contact Us',
+            'secondary_button_url' => '/contact',
+            'sort_order' => 1,
+            'is_active' => true,
+            'image' => $image,
+        ]);
+
+        $createResponse->assertRedirect();
+        $this->assertDatabaseHas('frontend_sliders', [
+            'title' => 'Empowering Future Leaders',
+            'badge' => 'Admissions Open',
+            'is_active' => true,
+        ]);
+
+        /** @var FrontendSlider $slider */
+        $slider = FrontendSlider::where('title', 'Empowering Future Leaders')->firstOrFail();
+        $initialImagePath = $slider->image_path;
+        $this->assertNotNull($initialImagePath);
+        Storage::disk('public')->assertExists($initialImagePath);
+
+        // 2. Update Slider without changing image
+        $updateResponse = $this->actingAs($admin)->post(route('school-settings.sliders.update', $slider), [
+            'title' => 'Updated Future Leaders Title',
+            'subtitle' => 'Updated subtitle description.',
+            'badge' => 'Limited Seats',
+            'primary_button_text' => 'Enroll Today',
+            'primary_button_url' => '/enroll',
+            'sort_order' => 2,
+            'is_active' => false,
+        ]);
+
+        $updateResponse->assertRedirect();
+        $slider->refresh();
+        $this->assertEquals('Updated Future Leaders Title', $slider->title);
+        $this->assertEquals('Limited Seats', $slider->badge);
+        $this->assertFalse($slider->is_active);
+        $this->assertEquals($initialImagePath, $slider->image_path);
+
+        // 3. Update Slider with a new image (verifying replacement)
+        $newImage = UploadedFile::fake()->image('banner2.jpg', 1920, 1080);
+        $updateWithImageResponse = $this->actingAs($admin)->post(route('school-settings.sliders.update', $slider), [
+            'title' => 'Updated With New Banner',
+            'sort_order' => 3,
+            'is_active' => true,
+            'image' => $newImage,
+        ]);
+
+        $updateWithImageResponse->assertRedirect();
+        $slider->refresh();
+        $this->assertEquals('Updated With New Banner', $slider->title);
+        $this->assertTrue($slider->is_active);
+        $this->assertNotEquals($initialImagePath, $slider->image_path);
+        Storage::disk('public')->assertExists($slider->image_path);
+        Storage::disk('public')->assertMissing($initialImagePath);
+
+        // 4. Delete Slider
+        $deleteResponse = $this->actingAs($admin)->delete(route('school-settings.sliders.destroy', $slider));
+        $deleteResponse->assertRedirect();
+        $this->assertDatabaseMissing('frontend_sliders', [
+            'id' => $slider->id,
+        ]);
+        Storage::disk('public')->assertMissing($slider->image_path);
     }
 }

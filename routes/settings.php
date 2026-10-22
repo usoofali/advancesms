@@ -34,7 +34,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('settings/school')->name('school-settings.')->group(function () {
         // Hero Sliders
         Route::post('sliders', [SchoolSettingController::class, 'storeSlider'])->name('sliders.store');
-        Route::post('sliders/{slider}', [SchoolSettingController::class, 'updateSlider'])->name('sliders.update');
+        Route::match(['put', 'post'], 'sliders/{slider}', [SchoolSettingController::class, 'updateSlider'])->name('sliders.update');
         Route::delete('sliders/{slider}', [SchoolSettingController::class, 'destroySlider'])->name('sliders.destroy');
 
         // Announcements

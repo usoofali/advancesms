@@ -382,6 +382,10 @@ const deleteGrade = (grade: Grade) => {
 // Slider Modal & Actions
 // -----------------------------------------------------------------------------
 const isSliderModalOpen = ref(false);
+const editingSlider = ref<FrontendSlider | null>(null);
+const sliderImagePreview = ref<string | null>(null);
+const sliderFileInput = ref<HTMLInputElement | null>(null);
+
 const sliderForm = useForm({
     title: '',
     subtitle: '',
@@ -396,24 +400,92 @@ const sliderForm = useForm({
 });
 
 const openNewSliderModal = () => {
+    editingSlider.value = null;
     sliderForm.reset();
+    sliderForm.clearErrors();
+    sliderImagePreview.value = null;
+    if (sliderFileInput.value) sliderFileInput.value.value = '';
+    sliderForm.title = '';
+    sliderForm.subtitle = '';
+    sliderForm.badge = '';
+    sliderForm.primary_button_text = 'Explore Academics';
+    sliderForm.primary_button_url = '/academics';
+    sliderForm.secondary_button_text = 'Contact Us';
+    sliderForm.secondary_button_url = '/contact';
+    sliderForm.sort_order = props.sliders.length;
+    sliderForm.is_active = true;
+    sliderForm.image = null;
     isSliderModalOpen.value = true;
 };
 
+const openEditSliderModal = (slider: FrontendSlider) => {
+    editingSlider.value = slider;
+    sliderForm.clearErrors();
+    if (sliderFileInput.value) sliderFileInput.value.value = '';
+    sliderForm.title = slider.title || '';
+    sliderForm.subtitle = slider.subtitle || '';
+    sliderForm.badge = slider.badge || '';
+    sliderForm.primary_button_text = slider.primary_button_text || '';
+    sliderForm.primary_button_url = slider.primary_button_url || '';
+    sliderForm.secondary_button_text = slider.secondary_button_text || '';
+    sliderForm.secondary_button_url = slider.secondary_button_url || '';
+    sliderForm.sort_order = slider.sort_order ?? 0;
+    sliderForm.is_active = Boolean(slider.is_active);
+    sliderForm.image = null;
+    sliderImagePreview.value = slider.image_url || null;
+    isSliderModalOpen.value = true;
+};
+
+const handleSliderImageChange = (e: Event) => {
+    const file = (e.target as HTMLInputElement).files?.[0] || null;
+    sliderForm.image = file;
+    if (file) {
+        sliderImagePreview.value = URL.createObjectURL(file);
+    }
+};
+
 const submitSlider = () => {
-    sliderForm.post('/settings/school/sliders', {
-        preserveScroll: true,
-        onSuccess: () => {
-            isSliderModalOpen.value = false;
-            sliderForm.reset();
-            toast.success('Hero slider banner added');
-        },
-    });
+    if (editingSlider.value) {
+        sliderForm.post(`/settings/school/sliders/${editingSlider.value.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                isSliderModalOpen.value = false;
+                sliderForm.reset();
+                editingSlider.value = null;
+                sliderImagePreview.value = null;
+                toast.success('Hero slider banner updated successfully');
+            },
+            onError: (errors) => {
+                const first = Object.values(errors)[0];
+                if (first) toast.error(first);
+            },
+        });
+    } else {
+        sliderForm.post('/settings/school/sliders', {
+            preserveScroll: true,
+            onSuccess: () => {
+                isSliderModalOpen.value = false;
+                sliderForm.reset();
+                editingSlider.value = null;
+                sliderImagePreview.value = null;
+                toast.success('Hero slider banner added');
+            },
+            onError: (errors) => {
+                const first = Object.values(errors)[0];
+                if (first) toast.error(first);
+            },
+        });
+    }
 };
 
 const deleteSlider = (id: number) => {
     if (confirm('Are you sure you want to delete this hero slider?')) {
-        router.delete(`/settings/school/sliders/${id}`, { preserveScroll: true });
+        router.delete(`/settings/school/sliders/${id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success('Hero slide deleted successfully.');
+            },
+        });
     }
 };
 
@@ -1399,9 +1471,15 @@ const deleteInquiry = (id: number) => {
 
                         <div class="flex items-center justify-between pt-2 border-t border-border text-[11px] text-muted-foreground">
                             <span>Order: {{ slide.sort_order }}</span>
-                            <Button v-if="canUpdate" variant="ghost" size="sm" @click="deleteSlider(slide.id)" class="text-destructive hover:bg-destructive/10 h-7 px-2">
-                                <Trash2 class="size-3.5" />
-                            </Button>
+                            <div class="flex items-center gap-1">
+                                <Button v-if="canUpdate" variant="ghost" size="sm" @click="openEditSliderModal(slide)" class="h-7 px-2 text-foreground hover:bg-muted" title="Edit Hero Slide">
+                                    <Pencil class="size-3.5" />
+                                    <span class="ml-1 text-xs">Edit</span>
+                                </Button>
+                                <Button v-if="canUpdate" variant="ghost" size="sm" @click="deleteSlider(slide.id)" class="text-destructive hover:bg-destructive/10 h-7 px-2" title="Delete Hero Slide">
+                                    <Trash2 class="size-3.5" />
+                                </Button>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -1605,8 +1683,10 @@ const deleteInquiry = (id: number) => {
         <Dialog :open="isSliderModalOpen" @update:open="isSliderModalOpen = $event">
             <DialogContent class="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle class="text-sm font-bold">New Hero Slide</DialogTitle>
-                    <DialogDescription class="text-xs">Add an eye-catching banner slide for the homepage.</DialogDescription>
+                    <DialogTitle class="text-sm font-bold">{{ editingSlider ? 'Edit Hero Slide' : 'New Hero Slide' }}</DialogTitle>
+                    <DialogDescription class="text-xs">
+                        {{ editingSlider ? 'Update hero slide details, call-to-action buttons, and banner image.' : 'Add an eye-catching banner slide for the homepage.' }}
+                    </DialogDescription>
                 </DialogHeader>
                 <form @submit.prevent="submitSlider" class="space-y-3 pt-2">
                     <div class="space-y-1">
@@ -1637,13 +1717,45 @@ const deleteInquiry = (id: number) => {
                             <Input v-model="sliderForm.primary_button_url" />
                         </div>
                     </div>
-                    <div class="space-y-1">
-                        <Label class="text-xs">Slide Background Image (Optional)</Label>
-                        <input type="file" accept="image/*" @change="sliderForm.image = ($event.target as HTMLInputElement).files?.[0] || null" class="text-xs text-muted-foreground" />
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <Label class="text-xs">Secondary Button Text</Label>
+                            <Input v-model="sliderForm.secondary_button_text" />
+                        </div>
+                        <div class="space-y-1">
+                            <Label class="text-xs">Secondary Button URL</Label>
+                            <Input v-model="sliderForm.secondary_button_url" />
+                        </div>
                     </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <input id="slider-is-active" type="checkbox" v-model="sliderForm.is_active" class="rounded border-input text-primary focus:ring-primary cursor-pointer" />
+                        <Label for="slider-is-active" class="text-xs cursor-pointer font-medium">Active Slide (Visible on homepage)</Label>
+                    </div>
+
+                    <div class="space-y-1.5 pt-1">
+                        <Label class="text-xs font-medium">Slide Background Image (Optional)</Label>
+                        <div v-if="sliderImagePreview" class="relative w-full h-28 rounded-lg overflow-hidden border border-border bg-muted mb-2">
+                            <img :src="sliderImagePreview" alt="Slide Preview" class="size-full object-cover" />
+                        </div>
+                        <input
+                            ref="sliderFileInput"
+                            type="file"
+                            accept="image/*"
+                            @change="handleSliderImageChange"
+                            class="text-xs text-muted-foreground file:mr-3 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:bg-primary/10 file:text-primary cursor-pointer"
+                        />
+                        <p v-if="editingSlider" class="text-[11px] text-muted-foreground">
+                            Leave file unselected to keep the existing background banner.
+                        </p>
+                    </div>
+
                     <DialogFooter class="pt-4">
                         <Button type="button" variant="outline" @click="isSliderModalOpen = false" class="text-xs">Cancel</Button>
-                        <Button type="submit" :disabled="sliderForm.processing" class="text-xs">Save Slide</Button>
+                        <Button type="submit" :disabled="sliderForm.processing" class="text-xs gap-1.5">
+                            <Spinner v-if="sliderForm.processing" class="size-3.5" />
+                            <span>{{ editingSlider ? 'Update Slide' : 'Save Slide' }}</span>
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
