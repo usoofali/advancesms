@@ -46,7 +46,7 @@ class UpdateStudentRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                'regex:/^[a-zA-Z0-9._-]+$/',
+                'regex:/^[a-zA-Z0-9._\/-]+$/',
                 Rule::unique('users', 'username')->ignore($userId),
             ],
             'is_active' => ['nullable', 'boolean'],

@@ -42,6 +42,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     generateClassBatchReportPdf,
+    type BatchPdfProgress,
     type BatchReportCardData,
 } from '@/services/reportCardPdfGenerator';
 import { index as academicReportCardsIndex, show as academicReportCardsShow } from '@/routes/academic/report-cards';
@@ -157,12 +158,24 @@ const isFetchingBatch = ref(false);
 const isGeneratingPdf = ref(false);
 const batchData = ref<BatchReportCardData | null>(null);
 
+const generationProgress = ref<BatchPdfProgress>({
+    stage: 'compiling',
+    current: 0,
+    total: 0,
+    percentage: 0,
+    message: '',
+});
+
 const pdfStyle = ref<'minimal' | 'comprehensive'>('comprehensive');
 const fontPairing = ref<'academic_serif' | 'modern_sans' | 'classic_formal'>('academic_serif');
 const useLetterheadImage = ref(true);
 
 const openBatchModal = async () => {
     isBatchModalOpen.value = true;
+    if (isGeneratingPdf.value) {
+        // Already compiling in progress; reopen modal to view live progress bar
+        return;
+    }
     isFetchingBatch.value = true;
     try {
         const res = await fetch(
@@ -183,25 +196,40 @@ const openBatchModal = async () => {
     }
 };
 
-const handleGeneratePdf = () => {
+const handleGeneratePdf = async () => {
     if (!batchData.value) return;
     if (batchData.value.students.length === 0) {
         toast.error('No students found in this class/section to generate report cards for.');
         return;
     }
+    if (isGeneratingPdf.value) return;
 
     isGeneratingPdf.value = true;
+    generationProgress.value = {
+        stage: 'compiling',
+        current: 0,
+        total: batchData.value.students.length,
+        percentage: 0,
+        message: 'Initializing batch compilation...',
+    };
+
     try {
-        generateClassBatchReportPdf(batchData.value, {
+        await generateClassBatchReportPdf(batchData.value, {
             useLetterheadImage: useLetterheadImage.value,
             style: pdfStyle.value,
             fontPairing: fontPairing.value,
+            onProgress: (prog) => {
+                generationProgress.value = prog;
+            },
         });
         toast.success(`Generated batch report cards for ${batchData.value.students.length} students!`);
-        isBatchModalOpen.value = false;
+        // Briefly display the 100% complete state before closing modal
+        setTimeout(() => {
+            isBatchModalOpen.value = false;
+            isGeneratingPdf.value = false;
+        }, 1200);
     } catch (err: any) {
         toast.error(err.message || 'Error generating batch PDF');
-    } finally {
         isGeneratingPdf.value = false;
     }
 };
@@ -230,8 +258,9 @@ const handleGeneratePdf = () => {
                     :disabled="students.total === 0"
                     @click="openBatchModal"
                 >
-                    <FileDown class="size-4" />
-                    <span>Download Class Batch PDF</span>
+                    <Loader2 v-if="isGeneratingPdf" class="size-4 animate-spin text-primary-foreground" />
+                    <FileDown v-else class="size-4" />
+                    <span>{{ isGeneratingPdf ? `Generating Batch (${generationProgress.percentage}%)...` : 'Download Class Batch PDF' }}</span>
                 </Button>
             </div>
         </div>
@@ -464,7 +493,7 @@ const handleGeneratePdf = () => {
         </Card>
 
         <!-- BATCH REPORT CARD PDF CONFIGURATION MODAL -->
-        <Dialog :open="isBatchModalOpen" @update:open="(val) => isBatchModalOpen = val">
+        <Dialog :open="isBatchModalOpen" @update:open="(val) => { if (!isGeneratingPdf) isBatchModalOpen = val; }">
             <DialogContent class="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden gap-0">
                 <DialogHeader class="p-5 sm:p-6 pb-4 border-b border-border shrink-0 pr-12">
                     <div class="flex items-center gap-3">
@@ -472,17 +501,81 @@ const handleGeneratePdf = () => {
                             <FileDown class="size-5" />
                         </div>
                         <div>
-                            <DialogTitle class="text-lg font-bold">Download Class Batch Report Cards</DialogTitle>
+                            <DialogTitle class="text-lg font-bold">
+                                {{ isGeneratingPdf ? 'Compiling Class Batch Report Cards' : 'Download Class Batch Report Cards' }}
+                            </DialogTitle>
                             <DialogDescription class="text-xs">
-                                Compile and download all student report cards for this class into a single consolidated PDF document.
+                                {{ isGeneratingPdf ? 'Generating high-resolution consolidated PDF report cards for this class.' : 'Compile and download all student report cards for this class into a single consolidated PDF document.' }}
                             </DialogDescription>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <div class="flex-1 overflow-y-auto min-h-0 p-5 sm:p-6 space-y-5 text-xs">
+                    <!-- Progress State during Generation -->
+                    <div v-if="isGeneratingPdf" class="py-6 sm:py-8 px-4 flex flex-col items-center justify-center space-y-6 text-center">
+                        <!-- Icon with status glow -->
+                        <div class="relative flex items-center justify-center">
+                            <div
+                                class="size-20 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-500"
+                                :class="generationProgress.percentage === 100 ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 ring-4 ring-emerald-500/10' : 'bg-primary/10 text-primary border border-primary/20 ring-4 ring-primary/10'"
+                            >
+                                <CheckCircle2 v-if="generationProgress.percentage === 100" class="size-10 text-emerald-600 animate-in zoom-in-75 duration-300" />
+                                <Loader2 v-else class="size-10 animate-spin text-primary" />
+                            </div>
+                            <span
+                                v-if="generationProgress.percentage < 100"
+                                class="absolute -top-1 -right-1 flex h-4 w-4"
+                            >
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-4 w-4 bg-primary text-[9px] font-bold text-white items-center justify-center">●</span>
+                            </span>
+                        </div>
+
+                        <!-- Progress Bar & Percentage -->
+                        <div class="space-y-2 w-full max-w-md">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-bold uppercase tracking-wider text-[11px] text-muted-foreground flex items-center gap-1.5">
+                                    <span class="size-2 rounded-full" :class="generationProgress.percentage === 100 ? 'bg-emerald-500' : 'bg-primary animate-pulse'"></span>
+                                    <span>
+                                        {{ generationProgress.percentage === 100 ? 'Compilation Complete' : (generationProgress.stage === 'compiling' ? 'Phase 1: Compiling Student Records' : 'Phase 2: Rendering PDF Document') }}
+                                    </span>
+                                </span>
+                                <span class="text-base font-extrabold font-mono text-primary">
+                                    {{ generationProgress.percentage }}%
+                                </span>
+                            </div>
+
+                            <div class="h-3 w-full rounded-full bg-muted overflow-hidden border border-border/70 relative">
+                                <div
+                                    class="h-full bg-primary transition-all duration-300 ease-out rounded-full relative"
+                                    :style="{ width: `${generationProgress.percentage}%` }"
+                                >
+                                    <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+                                <span>{{ batchData ? `${batchData.class_name} - ${batchData.section_name}` : '' }}</span>
+                                <span v-if="generationProgress.total > 0">
+                                    {{ generationProgress.current }} / {{ generationProgress.total }} Students
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Message -->
+                        <div class="space-y-1 max-w-md">
+                            <p class="text-xs font-semibold text-foreground line-clamp-1">
+                                {{ generationProgress.message || 'Processing class report cards...' }}
+                            </p>
+                            <p class="text-[11px] text-muted-foreground">
+                                {{ generationProgress.percentage === 100 ? 'Consolidated PDF generated! Downloading file to your device...' : 'Please keep this dialog open while the browser compiles your report cards.' }}
+                            </p>
+                        </div>
+                    </div>
+
                     <!-- Fetching Spinner -->
-                    <div v-if="isFetchingBatch" class="flex flex-col items-center justify-center py-10 space-y-3">
+                    <div v-else-if="isFetchingBatch" class="flex flex-col items-center justify-center py-10 space-y-3">
                         <Loader2 class="size-8 animate-spin text-primary" />
                         <span class="text-xs text-muted-foreground font-medium">Fetching class records and compiling rankings...</span>
                     </div>
@@ -657,9 +750,10 @@ const handleGeneratePdf = () => {
                         type="button"
                         variant="outline"
                         size="sm"
+                        :disabled="isGeneratingPdf && generationProgress.percentage < 100"
                         @click="isBatchModalOpen = false"
                     >
-                        Cancel
+                        {{ generationProgress.percentage === 100 ? 'Close' : 'Cancel' }}
                     </Button>
 
                     <Button
@@ -671,7 +765,7 @@ const handleGeneratePdf = () => {
                     >
                         <Loader2 v-if="isGeneratingPdf" class="size-4 animate-spin" />
                         <Download v-else class="size-4" />
-                        <span>{{ isGeneratingPdf ? 'Compiling PDF...' : 'Generate & Download PDF' }}</span>
+                        <span>{{ isGeneratingPdf ? `Generating (${generationProgress.percentage}%)...` : 'Generate & Download PDF' }}</span>
                     </Button>
                 </DialogFooter>
             </DialogContent>

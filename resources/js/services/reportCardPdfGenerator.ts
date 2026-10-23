@@ -115,6 +115,14 @@ export interface BatchReportCardData {
     }>;
 }
 
+export interface BatchPdfProgress {
+    stage: 'compiling' | 'rendering' | 'complete';
+    current: number;
+    total: number;
+    percentage: number;
+    message: string;
+}
+
 export interface BatchPdfOptions {
     useLetterheadImage: boolean;
     style: 'minimal' | 'comprehensive';
@@ -123,15 +131,16 @@ export interface BatchPdfOptions {
     bottomMargin?: number;
     leftMargin?: number;
     rightMargin?: number;
+    onProgress?: (progress: BatchPdfProgress) => void;
 }
 
 /**
  * Generate and download a consolidated, multi-page batch report card PDF for a class.
  */
-export function generateClassBatchReportPdf(
+export async function generateClassBatchReportPdf(
     data: BatchReportCardData,
     options: BatchPdfOptions
-): void {
+): Promise<void> {
     if (!data.students || data.students.length === 0) {
         throw new Error('No students found to generate report cards for.');
     }
@@ -156,9 +165,20 @@ export function generateClassBatchReportPdf(
     const pdfContent: any[] = [];
     const totalStudentsInClass = data.class_total_students || data.students.length;
     const totalStudentsInSection = data.section_total_students || totalStudentsInClass;
+    const totalStudents = data.students.length;
 
-    data.students.forEach((student, index) => {
-        const isLastStudent = index === data.students.length - 1;
+    options.onProgress?.({
+        stage: 'compiling',
+        current: 0,
+        total: totalStudents,
+        percentage: 0,
+        message: `Preparing student records (0 / ${totalStudents})...`,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    for (let index = 0; index < totalStudents; index++) {
+        const student = data.students[index];
+        const isLastStudent = index === totalStudents - 1;
         const overallAverage = student.average_score.toFixed(1);
 
         if (options.style === 'comprehensive') {
@@ -180,7 +200,7 @@ export function generateClassBatchReportPdf(
 
                 headerCols.push({
                     stack: [
-                        { text: data.school.name.toUpperCase(), font: titleFont, fontSize: 13.5, bold: true, color: '#0f172a', characterSpacing: 0.5 },
+                        { text: data.school.name.toUpperCase(), font: titleFont, fontSize: 14, bold: true, color: '#0f172a', characterSpacing: 0.5 },
                         data.school.motto ? { text: `"${data.school.motto}"`, font: titleFont, fontSize: 8, italics: true, color: '#475569', margin: [0, 1, 0, 1] } : {},
                         {
                             text: [
@@ -210,16 +230,16 @@ export function generateClassBatchReportPdf(
                 });
             }
 
-            // 2. Official Title Banner (Report Title = 13.5pt, clean with no background fill or border)
+            // 2. Official Title Banner (Report Title = 14pt, clean with no background fill or border)
             pdfContent.push({
                 text: 'OFFICIAL TERMINAL EXAMINATION REPORT CARD',
                 font: titleFont,
-                fontSize: 13.5,
+                fontSize: 14,
                 bold: true,
                 alignment: 'center',
                 color: '#0f172a',
                 characterSpacing: titleFont === 'Times' ? 0.75 : 0.5,
-                margin: [0, 0, 0, 8],
+                margin: [0, 0, 0, 20],
             });
 
             // 3. Student Bio-Data Matrix (Student & Exam Headers = 11pt, clean transparent background)
@@ -237,7 +257,7 @@ export function generateClassBatchReportPdf(
                             {
                                 stack: [
                                     { text: 'ADMISSION NUMBER', fontSize: 7, bold: true, color: '#64748b' },
-                                    { text: student.admission_number, fontSize: 11, bold: true, color: '#0f172a', margin: [0, 1, 0, 0] },
+                                    { text: student.admission_number.toUpperCase(), fontSize: 11, bold: true, color: '#0f172a', margin: [0, 1, 0, 0] },
                                 ],
                             },
                             {
@@ -295,46 +315,46 @@ export function generateClassBatchReportPdf(
 
             // 4. Subject Marks Table (Subject Table = 10pt, clean with no heavy individual cell fills)
             const headerRow: any[] = [
-                { text: '#', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'SUBJECT', style: 'tableHeader', fontSize: 10 },
+                { text: '#', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: 'SUBJECT', style: 'tableHeader', fontSize: 9 },
             ];
 
-            headerRow.push({ text: ca1Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 10 });
+            headerRow.push({ text: ca1Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 9 });
             if (caCount >= 2) {
-                headerRow.push({ text: ca2Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 10 });
+                headerRow.push({ text: ca2Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 9 });
             }
             if (caCount >= 3) {
-                headerRow.push({ text: ca3Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 10 });
+                headerRow.push({ text: ca3Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 9 });
             }
 
             headerRow.push(
-                { text: 'EXAM', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'TOTAL', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'GRADE', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: "TEACHER'S REMARK", style: 'tableHeader', fontSize: 10 }
+                { text: 'EXAM', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: 'TOTAL', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: 'GRADE', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: "TEACHER'S REMARK", style: 'tableHeader', fontSize: 9 }
             );
 
             const tableBody: any[] = [headerRow];
 
             student.marks.forEach((mark, subIndex) => {
                 const row: any[] = [
-                    { text: (subIndex + 1).toString(), alignment: 'center', fontSize: 10 },
-                    { text: mark.subject_name, fontSize: 10, bold: true },
+                    { text: (subIndex + 1).toString(), alignment: 'center', fontSize: 9 },
+                    { text: mark.subject_name, fontSize: 9, bold: true },
                 ];
 
-                row.push({ text: mark.ca1.toString(), alignment: 'center', fontSize: 10 });
+                row.push({ text: mark.ca1.toString(), alignment: 'center', fontSize: 9 });
                 if (caCount >= 2) {
-                    row.push({ text: mark.ca2.toString(), alignment: 'center', fontSize: 10 });
+                    row.push({ text: mark.ca2.toString(), alignment: 'center', fontSize: 9 });
                 }
                 if (caCount >= 3) {
-                    row.push({ text: mark.ca3.toString(), alignment: 'center', fontSize: 10 });
+                    row.push({ text: mark.ca3.toString(), alignment: 'center', fontSize: 9 });
                 }
 
                 row.push(
-                    { text: mark.exam_score.toString(), alignment: 'center', fontSize: 10 },
-                    { text: mark.total_score.toString(), alignment: 'center', fontSize: 10, bold: true },
-                    { text: mark.grade || '—', alignment: 'center', fontSize: 10, bold: true },
-                    { text: mark.teacher_comment || mark.remark || '—', fontSize: 9.5, italics: true }
+                    { text: mark.exam_score.toString(), alignment: 'center', fontSize: 9 },
+                    { text: mark.total_score.toString(), alignment: 'center', fontSize: 9, bold: true },
+                    { text: mark.grade || '—', alignment: 'center', fontSize: 9, bold: true },
+                    { text: mark.teacher_comment || mark.remark || '—', fontSize: 9, italics: true }
                 );
 
                 tableBody.push(row);
@@ -598,23 +618,23 @@ export function generateClassBatchReportPdf(
             // MINIMALIST STYLE (Aligned with Typography Requirements)
             // =========================================================================
 
-            // Student & Exam Metadata Card (Report Title = 13.5pt, Headers = 11pt)
+            // Student & Exam Metadata Card (Report Title = 14pt, Headers = 11pt)
             pdfContent.push(
                 {
-                    text: 'STUDENT TERMINAL REPORT CARD',
+                    text: 'OFFICIAL TERMINAL EXAMINATION REPORT CARD',
                     font: titleFont,
                     style: 'mainTitle',
-                    fontSize: 13.5,
+                    fontSize: 14,
                     bold: true,
                     alignment: 'center',
                     characterSpacing: titleFont === 'Times' ? 0.75 : 0.5,
-                    margin: [0, 0, 0, 10],
+                    margin: [0, 0, 0, 20],
                 },
                 {
                     columns: [
                         [
                             { text: `STUDENT NAME: ${student.student_name.toUpperCase()}`, font: studentNameFont, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
-                            { text: `ADMISSION NUMBER: ${student.admission_number}`, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
+                            { text: `ADMISSION NUMBER: ${student.admission_number.toUpperCase()}`, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
                             { text: `CLASS & SECTION: ${data.class_name} - ${data.section_name}`, fontSize: 11, bold: true, margin: [0, 0, 0, 3] },
                         ],
                         [
@@ -629,46 +649,46 @@ export function generateClassBatchReportPdf(
 
             // Dynamic Subject Table Headers based on CA Count (Subject Table = 10pt)
             const headerRow: any[] = [
-                { text: '#', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'SUBJECT', style: 'tableHeader', fontSize: 10 },
+                { text: '#', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: 'SUBJECT', style: 'tableHeader', fontSize: 9 },
             ];
 
-            headerRow.push({ text: ca1Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 10 });
+            headerRow.push({ text: ca1Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 9 });
             if (caCount >= 2) {
-                headerRow.push({ text: ca2Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 10 });
+                headerRow.push({ text: ca2Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 9 });
             }
             if (caCount >= 3) {
-                headerRow.push({ text: ca3Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 10 });
+                headerRow.push({ text: ca3Label.toUpperCase(), style: 'tableHeader', alignment: 'center', fontSize: 9 });
             }
 
             headerRow.push(
-                { text: 'EXAM', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'TOTAL', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'GRADE', style: 'tableHeader', alignment: 'center', fontSize: 10 },
-                { text: 'REMARK', style: 'tableHeader', alignment: 'center', fontSize: 10 }
+                { text: 'EXAM', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: 'TOTAL', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: 'GRADE', style: 'tableHeader', alignment: 'center', fontSize: 9 },
+                { text: 'REMARK', style: 'tableHeader', alignment: 'center', fontSize: 9 }
             );
 
             const tableBody: any[] = [headerRow];
 
             student.marks.forEach((subject, subIndex) => {
                 const row: any[] = [
-                    { text: (subIndex + 1).toString(), alignment: 'center', fontSize: 10 },
-                    { text: subject.subject_name, fontSize: 10, bold: true },
+                    { text: (subIndex + 1).toString(), alignment: 'center', fontSize: 9 },
+                    { text: subject.subject_name, fontSize: 9, bold: true },
                 ];
 
-                row.push({ text: subject.ca1.toString(), alignment: 'center', fontSize: 10 });
+                row.push({ text: subject.ca1.toString(), alignment: 'center', fontSize: 9 });
                 if (caCount >= 2) {
-                    row.push({ text: subject.ca2.toString(), alignment: 'center', fontSize: 10 });
+                    row.push({ text: subject.ca2.toString(), alignment: 'center', fontSize: 9 });
                 }
                 if (caCount >= 3) {
-                    row.push({ text: subject.ca3.toString(), alignment: 'center', fontSize: 10 });
+                    row.push({ text: subject.ca3.toString(), alignment: 'center', fontSize: 9 });
                 }
 
                 row.push(
-                    { text: subject.exam_score.toString(), alignment: 'center', fontSize: 10 },
-                    { text: subject.total_score.toString(), alignment: 'center', fontSize: 10, bold: true },
-                    { text: subject.grade || '—', alignment: 'center', fontSize: 10, bold: true },
-                    { text: subject.remark || '—', font: remarksFont, fontSize: 9.5, italics: true }
+                    { text: subject.exam_score.toString(), alignment: 'center', fontSize: 9 },
+                    { text: subject.total_score.toString(), alignment: 'center', fontSize: 9, bold: true },
+                    { text: subject.grade || '—', alignment: 'center', fontSize: 9, bold: true },
+                    { text: subject.remark || '—', font: remarksFont, fontSize: 9, italics: true }
                 );
 
                 tableBody.push(row);
@@ -790,7 +810,22 @@ export function generateClassBatchReportPdf(
         if (!isLastStudent) {
             pdfContent.push({ text: '', pageBreak: 'after' });
         }
-    });
+
+        const currentCount = index + 1;
+        const compilingPct = Math.max(1, Math.round((currentCount / totalStudents) * 45));
+        options.onProgress?.({
+            stage: 'compiling',
+            current: currentCount,
+            total: totalStudents,
+            percentage: compilingPct,
+            message: `Compiling student ${currentCount} of ${totalStudents}: ${student.student_name}`,
+        });
+
+        // Yield control to let browser re-render UI and animate progress
+        if (index % 2 === 0 || isLastStudent) {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+    }
 
     // Document Definition
     const docDefinition: any = {
@@ -800,12 +835,12 @@ export function generateClassBatchReportPdf(
         styles: {
             mainTitle: {
                 font: titleFont,
-                fontSize: 13.5,
+                fontSize: 14,
                 bold: true,
                 color: '#0f172a',
             },
             tableHeader: {
-                fontSize: 10,
+                fontSize: 9,
                 bold: true,
                 color: '#1e293b',
             },
@@ -847,5 +882,73 @@ export function generateClassBatchReportPdf(
     const safeTermName = data.term_name.replace(/[^a-zA-Z0-9_-]/g, '_');
     const filename = `Report_Cards_${safeClassName}_${safeSectionName}_${safeTermName}.pdf`;
 
-    pdfMake.createPdf(docDefinition).download(filename);
+    options.onProgress?.({
+        stage: 'rendering',
+        current: totalStudents,
+        total: totalStudents,
+        percentage: 50,
+        message: 'Assembling document structure...',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    let currentPct = 50;
+    const onPdfProgress = (progressRatio: number) => {
+        const mapped = 50 + Math.round(progressRatio * 45); // 50% to 95%
+        if (mapped > currentPct) {
+            currentPct = Math.min(95, mapped);
+            options.onProgress?.({
+                stage: 'rendering',
+                current: totalStudents,
+                total: totalStudents,
+                percentage: currentPct,
+                message: `Rendering PDF pages (${currentPct}%)...`,
+            });
+        }
+    };
+
+    if (typeof (pdfMake as any).setProgressCallback === 'function') {
+        try {
+            (pdfMake as any).setProgressCallback(onPdfProgress);
+        } catch {
+            // ignore
+        }
+    }
+
+    const progressTicker = setInterval(() => {
+        if (currentPct < 92) {
+            currentPct += 2;
+            options.onProgress?.({
+                stage: 'rendering',
+                current: totalStudents,
+                total: totalStudents,
+                percentage: currentPct,
+                message: `Rendering PDF pages (${currentPct}%)...`,
+            });
+        }
+    }, 250);
+
+    try {
+        const pdfDoc = (pdfMake as any).createPdf(docDefinition, {
+            progressCallback: onPdfProgress,
+        });
+
+        await pdfDoc.download(filename);
+    } finally {
+        clearInterval(progressTicker);
+        if (typeof (pdfMake as any).setProgressCallback === 'function') {
+            try {
+                (pdfMake as any).setProgressCallback(null);
+            } catch {
+                // ignore
+            }
+        }
+    }
+
+    options.onProgress?.({
+        stage: 'complete',
+        current: totalStudents,
+        total: totalStudents,
+        percentage: 100,
+        message: 'Consolidated PDF generated! Triggering download...',
+    });
 }

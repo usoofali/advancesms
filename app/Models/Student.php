@@ -146,16 +146,15 @@ class Student extends Model
 
     /**
      * Generate a default student username from their admission number.
-     * e.g., 'YUM-SA/001' -> 'gsss-gsa001'
+     * Keeps the exact admission number (e.g. 'GSA/01838' or 'YUM-SA/001').
      */
     public static function generateStudentUsername(string $admissionNumber, ?int $ignoreUserId = null): string
     {
-        $base = static::sanitizeAdmissionNumber($admissionNumber);
-        $candidate = $base;
+        $candidate = trim($admissionNumber);
         $counter = 1;
 
         while (User::query()->where('username', $candidate)->when($ignoreUserId, fn ($q) => $q->where('id', '!=', $ignoreUserId))->exists()) {
-            $candidate = "{$base}_{$counter}";
+            $candidate = "{$admissionNumber}_{$counter}";
             $counter++;
         }
 

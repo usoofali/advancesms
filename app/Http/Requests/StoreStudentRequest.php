@@ -32,7 +32,7 @@ class StoreStudentRequest extends FormRequest
             'gender' => ['required', new Enum(Gender::class)],
             'email' => ['nullable', 'email', 'max:150', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'username' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._-]+$/', 'unique:users,username'],
+            'username' => ['nullable', 'string', 'max:50', 'regex:/^[a-zA-Z0-9._\/-]+$/', 'unique:users,username'],
             'password' => ['nullable', 'string', 'min:8'],
 
             // Student Record

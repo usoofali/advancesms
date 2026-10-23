@@ -322,7 +322,7 @@ const getGeneratedStudentEmail = (adm: string): string => {
 };
 
 const getGeneratedStudentUsername = (adm: string): string => {
-    return formatAdmissionForLogin(adm);
+    return adm ? adm.trim() : '';
 };
 
 const setPasswordToDefault = () => {
@@ -1166,7 +1166,9 @@ const confirmDeleteStudent = () => {
                         <div class="text-xs text-purple-900/90 dark:text-purple-200/90 leading-relaxed flex items-start gap-2.5 pt-1">
                             <KeyRound class="h-4 w-4 shrink-0 mt-0.5 text-purple-600 dark:text-purple-400" />
                             <div>
-                                Student portal login email and username are automatically provisioned from the admission number
+                                Student portal login username is set to the admission number
+                                (<span class="font-mono font-semibold">{{ studentForm.admission_number || 'admission' }}</span>)
+                                and email as
                                 (<span class="font-mono font-semibold">{{ formatAdmissionForLogin(studentForm.admission_number) || 'admission' }}@sms.com</span>)
                                 with default initial password
                                 <span class="font-mono font-semibold px-1 py-0.5 rounded bg-purple-200/70 dark:bg-purple-900/60 text-purple-950 dark:text-purple-100">12345678</span>.

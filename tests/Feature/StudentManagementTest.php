@@ -91,7 +91,7 @@ class StudentManagementTest extends TestCase
         $this->assertNotNull($student);
         $this->assertSame('AMINA SULEIMAN', $student->user->name);
         $this->assertSame('yum-sa00001@sms.com', $student->user->email);
-        $this->assertSame('yum-sa00001', $student->user->username);
+        $this->assertSame('YUM-SA/00001', $student->user->username);
         $this->assertTrue(Hash::check('12345678', $student->user->password));
 
         $this->assertDatabaseHas('enrollments', [
@@ -380,11 +380,11 @@ class StudentManagementTest extends TestCase
     {
         $this->assertSame('yum-sa001', Student::sanitizeAdmissionNumber('YUM-SA/001'));
         $this->assertSame('yum-sa001@sms.com', Student::generateStudentEmail('YUM-SA/001'));
-        $this->assertSame('yum-sa001', Student::generateStudentUsername('YUM-SA/001'));
+        $this->assertSame('YUM-SA/001', Student::generateStudentUsername('YUM-SA/001'));
 
         $this->assertSame('gsss0001', Student::sanitizeAdmissionNumber('GSSS/0001'));
         $this->assertSame('gsss0001@sms.com', Student::generateStudentEmail('GSSS/0001'));
-        $this->assertSame('gsss0001', Student::generateStudentUsername('GSSS/0001'));
+        $this->assertSame('GSSS/0001', Student::generateStudentUsername('GSSS/0001'));
     }
 
     public function test_admin_can_reset_student_password_to_default(): void
