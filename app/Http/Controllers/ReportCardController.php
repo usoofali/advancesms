@@ -203,6 +203,12 @@ class ReportCardController extends Controller
                 $totalScoreObtained += $total;
                 $totalMaxScore += 100.0;
 
+                $isAbsent = ($mark->ca1 === null || (float) $mark->ca1 === 0.0)
+                    && ($mark->ca2 === null || (float) $mark->ca2 === 0.0)
+                    && ($mark->ca3 === null || (float) $mark->ca3 === 0.0)
+                    && ($mark->exam_score === null || (float) $mark->exam_score === 0.0)
+                    && ($total === 0.0);
+
                 $marksList[] = [
                     'id' => $mark->id,
                     'subject_name' => $mark->subject->name,
@@ -212,10 +218,11 @@ class ReportCardController extends Controller
                     'ca3' => $mark->ca3 !== null ? (float) $mark->ca3 : null,
                     'exam_score' => $mark->exam_score !== null ? (float) $mark->exam_score : null,
                     'total_score' => $total,
-                    'grade' => $mark->grade ? $mark->grade->name : 'F',
-                    'grade_point' => $mark->grade ? (float) $mark->grade->grade_point : 0.0,
-                    'remark' => $mark->grade ? $mark->grade->remark : 'Fail',
-                    'teacher_comment' => $mark->teacher_comment,
+                    'grade' => $isAbsent ? 'ABS' : ($mark->grade ? $mark->grade->name : 'F'),
+                    'grade_point' => $isAbsent ? 0.0 : ($mark->grade ? (float) $mark->grade->grade_point : 0.0),
+                    'remark' => $isAbsent ? 'Absent' : ($mark->grade ? $mark->grade->remark : 'Fail'),
+                    'teacher_comment' => $isAbsent ? 'Absent' : $mark->teacher_comment,
+                    'is_absent' => $isAbsent,
                 ];
             }
         }
@@ -322,8 +329,11 @@ class ReportCardController extends Controller
             ->orderByDesc('mark_from')
             ->get(['name', 'grade_point', 'mark_from', 'mark_to', 'remark']);
 
+        $allSubjectsAbsent = $subjectsCount > 0 && collect($marksList)->every(fn ($m) => $m['is_absent']);
+
         // Default automated Principal & Form Master remarks based on average
         $principalRemark = match (true) {
+            $allSubjectsAbsent => 'Candidate was absent from the terminal examination.',
             $terminalAverage >= 80 => 'An outstanding academic performance. Demonstrated exceptional discipline and intellect. Keep shining!',
             $terminalAverage >= 70 => 'Very commendable result. Shows great diligence and aptitude. Capable of even higher heights.',
             $terminalAverage >= 60 => 'Good performance. Consistent effort observed. More concentration in core subjects recommended.',
@@ -332,6 +342,7 @@ class ReportCardController extends Controller
         };
 
         $teacherRemark = match (true) {
+            $allSubjectsAbsent => 'Candidate was absent from continuous assessments and examinations.',
             $terminalAverage >= 75 => 'A brilliant, well-behaved and industrious student with exemplary character.',
             $terminalAverage >= 65 => 'Shows positive attitude toward schoolwork and actively participates in class activities.',
             $terminalAverage >= 50 => 'Fair progress shown. Needs encouragement to cultivate more consistent personal study habits.',
@@ -573,19 +584,26 @@ class ReportCardController extends Controller
                 $total = (float) $mark->total_score;
                 $totalScoreObtained += $total;
 
+                $isAbsent = ($mark->ca1 === null || (float) $mark->ca1 === 0.0)
+                    && ($mark->ca2 === null || (float) $mark->ca2 === 0.0)
+                    && ($mark->ca3 === null || (float) $mark->ca3 === 0.0)
+                    && ($mark->exam_score === null || (float) $mark->exam_score === 0.0)
+                    && ($total === 0.0);
+
                 $marksList[] = [
                     'id' => $mark->id,
                     'subject_name' => $mark->subject->name,
                     'subject_code' => $mark->subject->code,
-                    'ca1' => $mark->ca1 !== null ? (float) $mark->ca1 : 0.0,
-                    'ca2' => $mark->ca2 !== null ? (float) $mark->ca2 : 0.0,
-                    'ca3' => $mark->ca3 !== null ? (float) $mark->ca3 : 0.0,
-                    'exam_score' => $mark->exam_score !== null ? (float) $mark->exam_score : 0.0,
+                    'ca1' => $mark->ca1 !== null ? (float) $mark->ca1 : null,
+                    'ca2' => $mark->ca2 !== null ? (float) $mark->ca2 : null,
+                    'ca3' => $mark->ca3 !== null ? (float) $mark->ca3 : null,
+                    'exam_score' => $mark->exam_score !== null ? (float) $mark->exam_score : null,
                     'total_score' => $total,
-                    'grade' => $mark->grade ? $mark->grade->name : 'F',
-                    'grade_point' => $mark->grade ? (float) $mark->grade->grade_point : 0.0,
-                    'remark' => $mark->grade ? $mark->grade->remark : 'Fail',
-                    'teacher_comment' => $mark->teacher_comment,
+                    'grade' => $isAbsent ? 'ABS' : ($mark->grade ? $mark->grade->name : 'F'),
+                    'grade_point' => $isAbsent ? 0.0 : ($mark->grade ? (float) $mark->grade->grade_point : 0.0),
+                    'remark' => $isAbsent ? 'Absent' : ($mark->grade ? $mark->grade->remark : 'Fail'),
+                    'teacher_comment' => $isAbsent ? 'Absent' : $mark->teacher_comment,
+                    'is_absent' => $isAbsent,
                 ];
             }
 
@@ -602,8 +620,11 @@ class ReportCardController extends Controller
                 ? round((($daysPresent + $daysLate) / $totalSchoolDays) * 100, 1)
                 : 0.0;
 
+            $allSubjectsAbsent = $subjectsCount > 0 && collect($marksList)->every(fn ($m) => $m['is_absent']);
+
             // Automated Remarks based on student average
             $principalRemark = match (true) {
+                $allSubjectsAbsent => 'Candidate was absent from the terminal examination.',
                 $terminalAverage >= 80 => 'An outstanding academic performance. Demonstrated exceptional discipline and intellect. Keep shining!',
                 $terminalAverage >= 70 => 'Very commendable result. Shows great diligence and aptitude. Capable of even higher heights.',
                 $terminalAverage >= 60 => 'Good performance. Consistent effort observed. More concentration in core subjects recommended.',
@@ -612,6 +633,7 @@ class ReportCardController extends Controller
             };
 
             $teacherRemark = match (true) {
+                $allSubjectsAbsent => 'Candidate was absent from continuous assessments and examinations.',
                 $terminalAverage >= 75 => 'A brilliant, well-behaved and industrious student with exemplary character.',
                 $terminalAverage >= 65 => 'Shows positive attitude toward schoolwork and actively participates in class activities.',
                 $terminalAverage >= 50 => 'Fair progress shown. Needs encouragement to cultivate more consistent personal study habits.',

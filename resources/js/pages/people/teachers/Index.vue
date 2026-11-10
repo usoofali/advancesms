@@ -17,14 +17,17 @@ import {
     KeyRound,
     Library,
     Mail,
+    MoreHorizontal,
     Phone,
     Plus,
     Printer,
     RefreshCw,
     Search,
+    ShieldAlert,
     Trash2,
     UserCheck,
     Users,
+    UserX,
     XCircle,
 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
@@ -50,10 +53,17 @@ import {
     DialogScrollContent,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { destroy as destroyTeacher, index as peopleTeachersIndex, resetPassword as resetTeacherPassword, store as storeTeacher, update as updateTeacher } from '@/routes/people/teachers';
+import { destroy as destroyTeacher, index as peopleTeachersIndex, resetPassword as resetTeacherPassword, store as storeTeacher, toggleStatus, update as updateTeacher } from '@/routes/people/teachers';
 import type { Department } from '@/types/academic';
 import type { RoleSummary, Teacher, TeacherStats } from '@/types/people';
 
@@ -411,6 +421,37 @@ const confirmDeleteTeacher = () => {
         },
     });
 };
+
+// =========================================================================
+// TOGGLE STATUS MODAL
+// =========================================================================
+const isToggleStatusModalOpen = ref(false);
+const teacherToToggle = ref<Teacher | null>(null);
+const toggleStatusForm = useForm({});
+
+const openToggleStatusModal = (teacher: Teacher) => {
+    teacherToToggle.value = teacher;
+    isToggleStatusModalOpen.value = true;
+};
+
+const confirmToggleStatus = () => {
+    if (!teacherToToggle.value) return;
+
+    toggleStatusForm.patch(toggleStatus.url({ teacher: teacherToToggle.value.id }), {
+        preserveScroll: true,
+        onSuccess: () => {
+            isToggleStatusModalOpen.value = false;
+            const name = teacherToToggle.value?.user.name;
+            const wasActive = teacherToToggle.value?.user.is_active;
+            toast.success(`Staff member '${name}' has been ${wasActive ? 'deactivated' : 'activated'}.`);
+            teacherToToggle.value = null;
+        },
+        onError: (errors) => {
+            const firstError = Object.values(errors)[0];
+            if (firstError) toast.error(firstError);
+        },
+    });
+};
 </script>
 
 <template>
@@ -652,56 +693,98 @@ const confirmDeleteTeacher = () => {
 
                             <!-- Status -->
                             <td class="px-4 py-3 text-center">
-                                <Badge
-                                    v-if="teacher.user.is_active"
-                                    variant="outline"
-                                    class="text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 text-xs font-normal"
+                                <button
+                                    v-if="canUpdateTeacher"
+                                    type="button"
+                                    class="inline-flex items-center cursor-pointer transition-opacity hover:opacity-80"
+                                    :title="teacher.user.is_active ? 'Click to deactivate login access' : 'Click to activate login access'"
+                                    @click="openToggleStatusModal(teacher)"
                                 >
-                                    Active
-                                </Badge>
-                                <Badge
-                                    v-else
-                                    variant="secondary"
-                                    class="bg-muted text-muted-foreground text-xs font-normal"
-                                >
-                                    Inactive
-                                </Badge>
+                                    <Badge
+                                        v-if="teacher.user.is_active"
+                                        variant="outline"
+                                        class="text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 text-xs font-normal"
+                                    >
+                                        Active
+                                    </Badge>
+                                    <Badge
+                                        v-else
+                                        variant="secondary"
+                                        class="bg-muted text-muted-foreground text-xs font-normal"
+                                    >
+                                        Inactive
+                                    </Badge>
+                                </button>
+                                <template v-else>
+                                    <Badge
+                                        v-if="teacher.user.is_active"
+                                        variant="outline"
+                                        class="text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 text-xs font-normal"
+                                    >
+                                        Active
+                                    </Badge>
+                                    <Badge
+                                        v-else
+                                        variant="secondary"
+                                        class="bg-muted text-muted-foreground text-xs font-normal"
+                                    >
+                                        Inactive
+                                    </Badge>
+                                </template>
                             </td>
 
                             <!-- Actions -->
                             <td class="px-4 py-3 text-right">
-                                <div class="flex items-center justify-end gap-1">
-                                    <Button
-                                        v-if="canUpdateTeacher"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="size-8 text-muted-foreground hover:text-foreground"
-                                        @click="openEditTeacherModal(teacher)"
-                                        title="Edit Profile"
-                                    >
-                                        <Edit2 class="size-3.5" />
-                                    </Button>
-                                    <Button
-                                        v-if="canUpdateTeacher"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="size-8 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400"
-                                        @click="openResetPasswordModal(teacher)"
-                                        title="Reset Password Directly"
-                                    >
-                                        <KeyRound class="size-3.5" />
-                                    </Button>
-                                    <Button
-                                        v-if="canDeleteTeacher"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="size-8 text-muted-foreground hover:text-destructive"
-                                        @click="openDeleteTeacherModal(teacher)"
-                                        title="Delete Staff Member"
-                                    >
-                                        <Trash2 class="size-3.5" />
-                                    </Button>
-                                </div>
+                                <DropdownMenu v-if="canUpdateTeacher || canDeleteTeacher">
+                                    <DropdownMenuTrigger as-child>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            class="size-8 text-muted-foreground hover:text-foreground"
+                                            title="Staff Actions"
+                                        >
+                                            <MoreHorizontal class="size-4" />
+                                            <span class="sr-only">Open actions menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" class="w-48">
+                                        <DropdownMenuItem
+                                            v-if="canUpdateTeacher"
+                                            class="cursor-pointer"
+                                            @click="openEditTeacherModal(teacher)"
+                                        >
+                                            <Edit2 class="size-4" />
+                                            <span>Edit Profile</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-if="canUpdateTeacher"
+                                            class="cursor-pointer"
+                                            @click="openToggleStatusModal(teacher)"
+                                        >
+                                            <UserX v-if="teacher.user.is_active" class="size-4 text-rose-600 dark:text-rose-400" />
+                                            <UserCheck v-else class="size-4 text-emerald-600 dark:text-emerald-400" />
+                                            <span>{{ teacher.user.is_active ? 'Deactivate Access' : 'Activate Access' }}</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-if="canUpdateTeacher"
+                                            class="cursor-pointer"
+                                            @click="openResetPasswordModal(teacher)"
+                                        >
+                                            <KeyRound class="size-4 text-amber-600 dark:text-amber-400" />
+                                            <span>Reset Password</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator v-if="canUpdateTeacher && canDeleteTeacher" />
+                                        <DropdownMenuItem
+                                            v-if="canDeleteTeacher"
+                                            variant="destructive"
+                                            class="cursor-pointer"
+                                            @click="openDeleteTeacherModal(teacher)"
+                                        >
+                                            <Trash2 class="size-4" />
+                                            <span>Delete Staff Member</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </td>
                         </tr>
                         <tr v-if="filteredTeachers.length === 0">
@@ -1179,6 +1262,65 @@ const confirmDeleteTeacher = () => {
                     >
                         <Spinner v-if="deleteForm.processing" class="size-4" />
                         <span>Delete Staff Member</span>
+                    </Button>
+                </DialogFooter>
+            </DialogScrollContent>
+        </Dialog>
+
+        <!-- ================================================================= -->
+        <!-- TOGGLE STATUS CONFIRMATION MODAL -->
+        <!-- ================================================================= -->
+        <Dialog :open="isToggleStatusModalOpen" @update:open="(val) => isToggleStatusModalOpen = val">
+            <DialogScrollContent class="sm:max-w-md">
+                <DialogHeader>
+                    <div
+                        class="flex items-center gap-2"
+                        :class="teacherToToggle?.user.is_active ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'"
+                    >
+                        <ShieldAlert class="size-5" />
+                        <DialogTitle>{{ teacherToToggle?.user.is_active ? 'Deactivate Login Access' : 'Activate Login Access' }}</DialogTitle>
+                    </div>
+                    <DialogDescription>
+                        Are you sure you want to <strong>{{ teacherToToggle?.user.is_active ? 'deactivate' : 'activate' }}</strong> login access for
+                        <span class="font-semibold text-foreground">{{ teacherToToggle?.user.name }} ({{ teacherToToggle?.staff_id }})</span>?
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div
+                    class="p-3 rounded-lg text-xs flex items-start gap-2"
+                    :class="
+                        teacherToToggle?.user.is_active
+                            ? 'bg-destructive/10 border border-destructive/20 text-destructive'
+                            : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                    "
+                >
+                    <ShieldAlert class="size-4 shrink-0 mt-0.5" />
+                    <span v-if="teacherToToggle?.user.is_active">
+                        This staff member will immediately be prevented from logging in to the system. All their profile data and teaching assignments will remain intact.
+                    </span>
+                    <span v-else>
+                        This staff member will regain login access to the system using their existing credentials.
+                    </span>
+                </div>
+
+                <DialogFooter class="pt-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="isToggleStatusModalOpen = false"
+                        :disabled="toggleStatusForm.processing"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        :variant="teacherToToggle?.user.is_active ? 'destructive' : 'default'"
+                        :disabled="toggleStatusForm.processing"
+                        @click="confirmToggleStatus"
+                        class="gap-2"
+                    >
+                        <Spinner v-if="toggleStatusForm.processing" class="size-4" />
+                        <span>{{ teacherToToggle?.user.is_active ? 'Deactivate Access' : 'Activate Access' }}</span>
                     </Button>
                 </DialogFooter>
             </DialogScrollContent>

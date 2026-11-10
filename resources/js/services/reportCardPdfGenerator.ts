@@ -24,15 +24,32 @@ export interface StudentMarkItem {
     id: number;
     subject_name: string;
     subject_code: string;
-    ca1: number;
-    ca2: number;
-    ca3: number;
-    exam_score: number;
+    ca1: number | null;
+    ca2: number | null;
+    ca3: number | null;
+    exam_score: number | null;
     total_score: number;
     grade: string;
     grade_point?: number;
     remark: string;
     teacher_comment?: string | null;
+    is_absent?: boolean;
+}
+
+export function isMarkAbsent(mark: StudentMarkItem): boolean {
+    if (mark.is_absent !== undefined) {
+        return Boolean(mark.is_absent);
+    }
+    const isZeroOrNull = (val: number | string | null | undefined) =>
+        val === null || val === undefined || val === '' || Number(val) === 0;
+
+    return (
+        isZeroOrNull(mark.ca1) &&
+        isZeroOrNull(mark.ca2) &&
+        isZeroOrNull(mark.ca3) &&
+        isZeroOrNull(mark.exam_score) &&
+        isZeroOrNull(mark.total_score)
+    );
 }
 
 export interface StudentReportItem {
@@ -337,24 +354,25 @@ export async function generateClassBatchReportPdf(
             const tableBody: any[] = [headerRow];
 
             student.marks.forEach((mark, subIndex) => {
+                const isAbsent = isMarkAbsent(mark);
                 const row: any[] = [
                     { text: (subIndex + 1).toString(), alignment: 'center', fontSize: 9 },
                     { text: mark.subject_name, fontSize: 9, bold: true },
                 ];
 
-                row.push({ text: mark.ca1.toString(), alignment: 'center', fontSize: 9 });
+                row.push({ text: isAbsent ? '—' : (mark.ca1 !== null && mark.ca1 !== undefined ? mark.ca1.toString() : '—'), alignment: 'center', fontSize: 9 });
                 if (caCount >= 2) {
-                    row.push({ text: mark.ca2.toString(), alignment: 'center', fontSize: 9 });
+                    row.push({ text: isAbsent ? '—' : (mark.ca2 !== null && mark.ca2 !== undefined ? mark.ca2.toString() : '—'), alignment: 'center', fontSize: 9 });
                 }
                 if (caCount >= 3) {
-                    row.push({ text: mark.ca3.toString(), alignment: 'center', fontSize: 9 });
+                    row.push({ text: isAbsent ? '—' : (mark.ca3 !== null && mark.ca3 !== undefined ? mark.ca3.toString() : '—'), alignment: 'center', fontSize: 9 });
                 }
 
                 row.push(
-                    { text: mark.exam_score.toString(), alignment: 'center', fontSize: 9 },
-                    { text: mark.total_score.toString(), alignment: 'center', fontSize: 9, bold: true },
-                    { text: mark.grade || '—', alignment: 'center', fontSize: 9, bold: true },
-                    { text: mark.teacher_comment || mark.remark || '—', fontSize: 9, italics: true }
+                    { text: isAbsent ? '—' : (mark.exam_score !== null && mark.exam_score !== undefined ? mark.exam_score.toString() : '—'), alignment: 'center', fontSize: 9 },
+                    { text: isAbsent ? 'ABS' : mark.total_score.toString(), alignment: 'center', fontSize: 9, bold: true },
+                    { text: isAbsent ? 'ABS' : (mark.grade || '—'), alignment: 'center', fontSize: 9, bold: true },
+                    { text: isAbsent ? 'Absent' : (mark.teacher_comment || mark.remark || '—'), fontSize: 9, italics: true }
                 );
 
                 tableBody.push(row);
@@ -671,24 +689,25 @@ export async function generateClassBatchReportPdf(
             const tableBody: any[] = [headerRow];
 
             student.marks.forEach((subject, subIndex) => {
+                const isAbsent = isMarkAbsent(subject);
                 const row: any[] = [
                     { text: (subIndex + 1).toString(), alignment: 'center', fontSize: 9 },
                     { text: subject.subject_name, fontSize: 9, bold: true },
                 ];
 
-                row.push({ text: subject.ca1.toString(), alignment: 'center', fontSize: 9 });
+                row.push({ text: isAbsent ? '—' : (subject.ca1 !== null && subject.ca1 !== undefined ? subject.ca1.toString() : '—'), alignment: 'center', fontSize: 9 });
                 if (caCount >= 2) {
-                    row.push({ text: subject.ca2.toString(), alignment: 'center', fontSize: 9 });
+                    row.push({ text: isAbsent ? '—' : (subject.ca2 !== null && subject.ca2 !== undefined ? subject.ca2.toString() : '—'), alignment: 'center', fontSize: 9 });
                 }
                 if (caCount >= 3) {
-                    row.push({ text: subject.ca3.toString(), alignment: 'center', fontSize: 9 });
+                    row.push({ text: isAbsent ? '—' : (subject.ca3 !== null && subject.ca3 !== undefined ? subject.ca3.toString() : '—'), alignment: 'center', fontSize: 9 });
                 }
 
                 row.push(
-                    { text: subject.exam_score.toString(), alignment: 'center', fontSize: 9 },
-                    { text: subject.total_score.toString(), alignment: 'center', fontSize: 9, bold: true },
-                    { text: subject.grade || '—', alignment: 'center', fontSize: 9, bold: true },
-                    { text: subject.remark || '—', font: remarksFont, fontSize: 9, italics: true }
+                    { text: isAbsent ? '—' : (subject.exam_score !== null && subject.exam_score !== undefined ? subject.exam_score.toString() : '—'), alignment: 'center', fontSize: 9 },
+                    { text: isAbsent ? 'ABS' : subject.total_score.toString(), alignment: 'center', fontSize: 9, bold: true },
+                    { text: isAbsent ? 'ABS' : (subject.grade || '—'), alignment: 'center', fontSize: 9, bold: true },
+                    { text: isAbsent ? 'Absent' : (subject.teacher_comment || subject.remark || '—'), font: remarksFont, fontSize: 9, italics: true }
                 );
 
                 tableBody.push(row);

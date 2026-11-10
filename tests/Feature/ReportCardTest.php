@@ -139,6 +139,7 @@ class ReportCardTest extends TestCase
             ->component('academic/reports/ReportCard')
             ->where('enrollment.id', $enrollment->id)
             ->where('enrollment.student.name', $user->name)
+            ->where('marks.0.is_absent', false)
             ->where('summary.total_score_obtained', 80)
             ->where('summary.terminal_average', 80)
             ->where('attendance.days_present', 1)
@@ -148,6 +149,73 @@ class ReportCardTest extends TestCase
             ->has('grades')
             ->has('remarks.teacher')
             ->has('remarks.principal')
+        );
+    }
+
+    public function test_marks_with_zero_or_null_scores_are_flagged_as_absent(): void
+    {
+        $admin = User::where('username', 'superadmin')->firstOrFail();
+        $session = AcademicSession::where('is_current', true)->firstOrFail();
+        $term = AcademicTerm::where('academic_session_id', $session->id)->where('is_current', true)->firstOrFail();
+        $class = SchoolClass::firstOrFail();
+        $section = Section::where('class_id', $class->id)->firstOrFail();
+        $subject = Subject::firstOrFail();
+
+        $exam = Exam::firstOrCreate(
+            [
+                'academic_session_id' => $session->id,
+                'academic_term_id' => $term->id,
+            ],
+            [
+                'name' => 'Report Card Examination',
+                'max_ca1' => 10,
+                'max_ca2' => 10,
+                'max_ca3' => 10,
+                'max_exam' => 70,
+            ]
+        );
+
+        $user = User::factory()->create(['role' => UserRole::STUDENT]);
+        $student = Student::create([
+            'user_id' => $user->id,
+            'admission_number' => 'SMS/RC/002',
+            'admission_date' => now()->toDateString(),
+        ]);
+        $enrollment = Enrollment::create([
+            'student_id' => $student->id,
+            'academic_session_id' => $session->id,
+            'class_id' => $class->id,
+            'section_id' => $section->id,
+            'status' => EnrollmentStatus::ACTIVE,
+        ]);
+
+        // Create absent mark (all zero or null, but with erroneous teacher_comment)
+        StudentMark::create([
+            'enrollment_id' => $enrollment->id,
+            'subject_id' => $subject->id,
+            'exam_id' => $exam->id,
+            'ca1' => 0,
+            'ca2' => 0,
+            'ca3' => 0,
+            'exam_score' => 0,
+            'total_score' => 0,
+            'teacher_comment' => 'Excellent work!',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('academic.report-cards.show', [
+            'enrollment' => $enrollment->id,
+            'term_id' => $term->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('academic/reports/ReportCard')
+            ->where('marks.0.is_absent', true)
+            ->where('marks.0.grade', 'ABS')
+            ->where('marks.0.remark', 'Absent')
+            ->where('marks.0.teacher_comment', 'Absent')
+            ->where('remarks.principal', 'Candidate was absent from the terminal examination.')
+            ->where('remarks.teacher', 'Candidate was absent from continuous assessments and examinations.')
         );
     }
 }

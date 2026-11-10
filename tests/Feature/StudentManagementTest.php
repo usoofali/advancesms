@@ -450,4 +450,51 @@ class StudentManagementTest extends TestCase
         $this->assertMatchesRegularExpression('/^TEST-SCH\/\d{5}$/', $next);
         $this->assertSame('TEST-SCH/00001', $next);
     }
+
+    public function test_admin_can_toggle_student_active_status(): void
+    {
+        $admin = User::where('username', 'superadmin')->firstOrFail();
+        $user = User::factory()->create([
+            'role' => UserRole::STUDENT,
+            'is_active' => true,
+        ]);
+        $user->assignRole(UserRole::STUDENT->value);
+        $student = Student::create([
+            'user_id' => $user->id,
+            'admission_number' => 'GSSS26-TOGGLE01',
+            'admission_date' => '2026-09-01',
+        ]);
+
+        // Deactivate
+        $response = $this->actingAs($admin)->patch(route('people.students.toggle-status', $student));
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertFalse($user->fresh()->is_active);
+
+        // Activate back
+        $response2 = $this->actingAs($admin)->patch(route('people.students.toggle-status', $student));
+        $response2->assertRedirect();
+        $response2->assertSessionHas('success');
+        $this->assertTrue($user->fresh()->is_active);
+    }
+
+    public function test_unauthorized_user_cannot_toggle_student_status(): void
+    {
+        $studentUser = User::factory()->create(['role' => UserRole::STUDENT]);
+        $studentUser->assignRole(UserRole::STUDENT->value);
+
+        $targetUser = User::factory()->create([
+            'role' => UserRole::STUDENT,
+            'is_active' => true,
+        ]);
+        $targetStudent = Student::create([
+            'user_id' => $targetUser->id,
+            'admission_number' => 'GSSS26-TOGGLE02',
+            'admission_date' => '2026-09-01',
+        ]);
+
+        $response = $this->actingAs($studentUser)->patch(route('people.students.toggle-status', $targetStudent));
+        $response->assertForbidden();
+        $this->assertTrue($targetUser->fresh()->is_active);
+    }
 }

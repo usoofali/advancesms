@@ -14,6 +14,7 @@ import {
     KeyRound,
     Mail,
     MapPin,
+    MoreHorizontal,
     Phone,
     Plus,
     Search,
@@ -44,6 +45,13 @@ import {
     DialogScrollContent,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -474,29 +482,39 @@ const confirmDeleteGuardian = () => {
                             </td>
 
                             <td class="px-6 py-4 text-right">
-                                <div class="flex items-center justify-end gap-1">
-                                    <Button
-                                        v-if="canUpdateGuardian"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                        title="Edit Profile"
-                                        @click="openEditGuardianModal(guardian)"
-                                    >
-                                        <Edit2 class="h-4 w-4" />
-                                    </Button>
-
-                                    <Button
-                                        v-if="canDeleteGuardian"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                        title="Delete Guardian"
-                                        @click="openDeleteModal(guardian)"
-                                    >
-                                        <Trash2 class="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                <DropdownMenu v-if="canUpdateGuardian || canDeleteGuardian">
+                                    <DropdownMenuTrigger as-child>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            class="size-8 text-muted-foreground hover:text-foreground"
+                                            title="Guardian Actions"
+                                        >
+                                            <MoreHorizontal class="size-4" />
+                                            <span class="sr-only">Open actions menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" class="w-48">
+                                        <DropdownMenuItem
+                                            v-if="canUpdateGuardian"
+                                            class="cursor-pointer"
+                                            @click="openEditGuardianModal(guardian)"
+                                        >
+                                            <Edit2 class="size-4" />
+                                            <span>Edit Profile</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator v-if="canUpdateGuardian && canDeleteGuardian" />
+                                        <DropdownMenuItem
+                                            v-if="canDeleteGuardian"
+                                            variant="destructive"
+                                            class="cursor-pointer"
+                                            @click="openDeleteModal(guardian)"
+                                        >
+                                            <Trash2 class="size-4" />
+                                            <span>Delete Guardian</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </td>
                         </tr>
 

@@ -324,6 +324,24 @@ class StudentController extends Controller
     }
 
     /**
+     * Toggle a student's login access status (activate / deactivate).
+     */
+    public function toggleStatus(Request $request, Student $student): RedirectResponse
+    {
+        if (! $request->user()?->can('students.update')) {
+            abort(403, 'Unauthorized to change student login status.');
+        }
+
+        $user = $student->user;
+        $newStatus = ! $user->is_active;
+        $user->update(['is_active' => $newStatus]);
+
+        $statusLabel = $newStatus ? 'activated' : 'deactivated';
+
+        return redirect()->back()->with('success', "Student '{$user->name}' ({$student->admission_number}) has been {$statusLabel}.");
+    }
+
+    /**
      * Remove the specified student from storage.
      */
     public function destroy(Request $request, Student $student): RedirectResponse

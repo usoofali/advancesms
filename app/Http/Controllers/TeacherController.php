@@ -190,6 +190,24 @@ class TeacherController extends Controller
     }
 
     /**
+     * Toggle a staff member's login access status (activate / deactivate).
+     */
+    public function toggleStatus(Request $request, Teacher $teacher): RedirectResponse
+    {
+        if (! $request->user()?->can('teachers.update')) {
+            abort(403, 'Unauthorized to change staff login status.');
+        }
+
+        $user = $teacher->user;
+        $newStatus = ! $user->is_active;
+        $user->update(['is_active' => $newStatus]);
+
+        $statusLabel = $newStatus ? 'activated' : 'deactivated';
+
+        return redirect()->back()->with('success', "Staff member '{$user->name}' ({$teacher->staff_id}) has been {$statusLabel}.");
+    }
+
+    /**
      * Remove the specified teacher from storage.
      */
     public function destroy(Request $request, Teacher $teacher): RedirectResponse

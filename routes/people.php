@@ -14,6 +14,7 @@ Route::middleware(['auth'])->prefix('people')->name('people.')->group(function (
     Route::post('teachers', [TeacherController::class, 'store'])->name('teachers.store');
     Route::put('teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
     Route::put('teachers/{teacher}/reset-password', [TeacherController::class, 'resetPassword'])->name('teachers.reset-password');
+    Route::patch('teachers/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])->name('teachers.toggle-status');
     Route::delete('teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
 
     // Teacher Attendance Register & Reports
@@ -27,6 +28,7 @@ Route::middleware(['auth'])->prefix('people')->name('people.')->group(function (
     Route::post('students', [StudentController::class, 'store'])->name('students.store');
     Route::get('students/{student}', [StudentController::class, 'show'])->name('students.show');
     Route::put('students/{student}', [StudentController::class, 'update'])->name('students.update');
+    Route::patch('students/{student}/toggle-status', [StudentController::class, 'toggleStatus'])->name('students.toggle-status');
     Route::delete('students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
 
     // Alumni & Graduated Students Directory

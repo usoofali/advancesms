@@ -15,6 +15,7 @@ use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Passkeys\Passkeys;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -54,6 +55,11 @@ class FortifyServiceProvider extends ServiceProvider
                 return null;
             }
 
+            // Block inactive users from logging in
+            if (! $user->is_active) {
+                return null;
+            }
+
             // Seamlessly upgrade legacy 40-character SHA-1 password hashes upon first login
             if (strlen($user->password) === 40 && sha1($password) === $user->password) {
                 $user->forceFill([
@@ -71,6 +77,11 @@ class FortifyServiceProvider extends ServiceProvider
             }
 
             return null;
+        });
+
+        // Block inactive users from logging in via passkey
+        Passkeys::authorizeLoginUsing(function (Request $request, $user) {
+            return (bool) $user->is_active;
         });
     }
 

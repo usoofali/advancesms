@@ -462,4 +462,71 @@ class TeacherManagementTest extends TestCase
         $this->assertSame('BELLO', $user->first_name);
         $this->assertSame('AHMADU GUSAU', $user->last_name);
     }
+
+    public function test_admin_can_toggle_teacher_active_status(): void
+    {
+        $admin = User::where('username', 'superadmin')->firstOrFail();
+        $user = User::factory()->create([
+            'role' => UserRole::TEACHER,
+            'is_active' => true,
+        ]);
+        $user->assignRole(UserRole::TEACHER->value);
+        $teacher = Teacher::create([
+            'user_id' => $user->id,
+            'staff_id' => 'STAFF/2026/801',
+            'designation' => 'Teacher',
+        ]);
+
+        // Deactivate
+        $response = $this->actingAs($admin)->patch(route('people.teachers.toggle-status', $teacher));
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+        $this->assertFalse($user->fresh()->is_active);
+
+        // Activate back
+        $response2 = $this->actingAs($admin)->patch(route('people.teachers.toggle-status', $teacher));
+        $response2->assertRedirect();
+        $response2->assertSessionHas('success');
+        $this->assertTrue($user->fresh()->is_active);
+    }
+
+    public function test_unauthorized_user_cannot_toggle_teacher_status(): void
+    {
+        $teacherUser = User::factory()->create(['role' => UserRole::TEACHER]);
+        $teacherUser->assignRole(UserRole::TEACHER->value);
+
+        $targetUser = User::factory()->create([
+            'role' => UserRole::TEACHER,
+            'is_active' => true,
+        ]);
+        $targetTeacher = Teacher::create([
+            'user_id' => $targetUser->id,
+            'staff_id' => 'STAFF/2026/802',
+            'designation' => 'Teacher',
+        ]);
+
+        $response = $this->actingAs($teacherUser)->patch(route('people.teachers.toggle-status', $targetTeacher));
+        $response->assertForbidden();
+        $this->assertTrue($targetUser->fresh()->is_active);
+    }
+
+    public function test_deactivated_staff_cannot_login(): void
+    {
+        $user = User::factory()->create([
+            'username' => 'inactive_staff_803',
+            'email' => 'inactive803@school.ng',
+            'password' => Hash::make('Password123#'),
+            'role' => UserRole::TEACHER,
+            'is_active' => false,
+        ]);
+        $user->assignRole(UserRole::TEACHER->value);
+
+        $response = $this->post('/login', [
+            'login' => 'inactive_staff_803',
+            'password' => 'Password123#',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors();
+    }
 }

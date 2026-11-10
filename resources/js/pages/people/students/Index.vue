@@ -19,16 +19,19 @@ import {
     Lock,
     Mail,
     MapPin,
+    MoreHorizontal,
     Phone,
     Plus,
     Printer,
     RefreshCw,
     Search,
+    ShieldAlert,
     ShieldCheck,
     Sparkles,
     Trash2,
     UserCheck,
     Users,
+    UserX,
     XCircle,
 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
@@ -53,6 +56,13 @@ import {
     DialogScrollContent,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -62,6 +72,7 @@ import {
     index as peopleStudentsIndex,
     show as showStudent,
     store as storeStudent,
+    toggleStatus,
     update as updateStudent,
 } from '@/routes/people/students';
 import type { AcademicSession, SchoolClass, Section } from '@/types/academic';
@@ -452,6 +463,37 @@ const confirmDeleteStudent = () => {
         },
     });
 };
+
+// =========================================================================
+// TOGGLE STATUS MODAL
+// =========================================================================
+const isToggleStatusModalOpen = ref(false);
+const studentToToggle = ref<Student | null>(null);
+const toggleStatusForm = useForm({});
+
+const openToggleStatusModal = (student: Student) => {
+    studentToToggle.value = student;
+    isToggleStatusModalOpen.value = true;
+};
+
+const confirmToggleStatus = () => {
+    if (!studentToToggle.value) return;
+
+    toggleStatusForm.patch(toggleStatus.url({ student: studentToToggle.value.id }), {
+        preserveScroll: true,
+        onSuccess: () => {
+            isToggleStatusModalOpen.value = false;
+            const name = studentToToggle.value?.user.name;
+            const wasActive = studentToToggle.value?.user.is_active;
+            toast.success(`Student '${name}' has been ${wasActive ? 'deactivated' : 'activated'}.`);
+            studentToToggle.value = null;
+        },
+        onError: (errors) => {
+            const firstError = Object.values(errors)[0];
+            if (firstError) toast.error(firstError);
+        },
+    });
+};
 </script>
 
 <template>
@@ -793,6 +835,23 @@ const confirmDeleteStudent = () => {
                                     <GraduationCap class="h-3 w-3" />
                                     <span>Alumni</span>
                                 </Badge>
+                                <button
+                                    v-else-if="canUpdateStudent"
+                                    type="button"
+                                    class="inline-flex items-center cursor-pointer transition-opacity hover:opacity-80"
+                                    :title="student.user.is_active ? 'Click to deactivate login access' : 'Click to activate login access'"
+                                    @click="openToggleStatusModal(student)"
+                                >
+                                    <Badge
+                                        :variant="student.user.is_active ? 'secondary' : 'outline'"
+                                        :class="student.user.is_active ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200' : 'text-muted-foreground'"
+                                        class="text-xs gap-1"
+                                    >
+                                        <CheckCircle2 v-if="student.user.is_active" class="h-3 w-3" />
+                                        <XCircle v-else class="h-3 w-3" />
+                                        <span>{{ student.user.is_active ? 'Active' : 'Inactive' }}</span>
+                                    </Badge>
+                                </button>
                                 <Badge
                                     v-else
                                     :variant="student.user.is_active ? 'secondary' : 'outline'"
@@ -806,37 +865,57 @@ const confirmDeleteStudent = () => {
                             </td>
 
                             <td class="px-6 py-4 text-right">
-                                <div class="flex items-center justify-end gap-1">
-                                    <Link
-                                        :href="showStudent(student.id).url"
-                                        class="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                                        title="View Student Record"
-                                    >
-                                        <Eye class="h-4 w-4" />
-                                    </Link>
-
-                                    <Button
-                                        v-if="canUpdateStudent"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                        title="Edit Student"
-                                        @click="openEditStudentModal(student)"
-                                    >
-                                        <Edit2 class="h-4 w-4" />
-                                    </Button>
-
-                                    <Button
-                                        v-if="canDeleteStudent"
-                                        variant="ghost"
-                                        size="icon"
-                                        class="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                        title="Delete Student"
-                                        @click="openDeleteModal(student)"
-                                    >
-                                        <Trash2 class="h-4 w-4" />
-                                    </Button>
-                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            class="size-8 text-muted-foreground hover:text-foreground"
+                                            title="Student Actions"
+                                        >
+                                            <MoreHorizontal class="size-4" />
+                                            <span class="sr-only">Open actions menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" class="w-48">
+                                        <DropdownMenuItem as-child>
+                                            <Link
+                                                :href="showStudent(student.id).url"
+                                                class="flex items-center gap-2 cursor-pointer"
+                                            >
+                                                <Eye class="size-4" />
+                                                <span>View Profile</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-if="canUpdateStudent"
+                                            class="cursor-pointer"
+                                            @click="openEditStudentModal(student)"
+                                        >
+                                            <Edit2 class="size-4" />
+                                            <span>Edit Student</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-if="canUpdateStudent"
+                                            class="cursor-pointer"
+                                            @click="openToggleStatusModal(student)"
+                                        >
+                                            <UserX v-if="student.user.is_active" class="size-4 text-rose-600 dark:text-rose-400" />
+                                            <UserCheck v-else class="size-4 text-emerald-600 dark:text-emerald-400" />
+                                            <span>{{ student.user.is_active ? 'Deactivate Access' : 'Activate Access' }}</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator v-if="canDeleteStudent" />
+                                        <DropdownMenuItem
+                                            v-if="canDeleteStudent"
+                                            variant="destructive"
+                                            class="cursor-pointer"
+                                            @click="openDeleteModal(student)"
+                                        >
+                                            <Trash2 class="size-4" />
+                                            <span>Delete Student</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </td>
                         </tr>
 
@@ -1309,6 +1388,63 @@ const confirmDeleteStudent = () => {
                     >
                         <Spinner v-if="deleteForm.processing" class="mr-2 h-4 w-4" />
                         <span>Confirm Delete</span>
+                    </Button>
+                </DialogFooter>
+            </DialogScrollContent>
+        </Dialog>
+
+        <!-- Toggle Status Confirmation Dialog -->
+        <Dialog :open="isToggleStatusModalOpen" @update:open="(val) => isToggleStatusModalOpen = val">
+            <DialogScrollContent class="max-w-md">
+                <DialogHeader>
+                    <div
+                        class="flex items-center gap-2"
+                        :class="studentToToggle?.user.is_active ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'"
+                    >
+                        <ShieldAlert class="size-5" />
+                        <DialogTitle>{{ studentToToggle?.user.is_active ? 'Deactivate Student Portal Access' : 'Activate Student Portal Access' }}</DialogTitle>
+                    </div>
+                    <DialogDescription>
+                        Are you sure you want to <strong>{{ studentToToggle?.user.is_active ? 'deactivate' : 'activate' }}</strong> portal login access for
+                        <span class="font-semibold text-foreground">{{ studentToToggle?.user.name }} ({{ studentToToggle?.admission_number }})</span>?
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div
+                    class="p-3 rounded-lg text-xs flex items-start gap-2"
+                    :class="
+                        studentToToggle?.user.is_active
+                            ? 'bg-destructive/10 border border-destructive/20 text-destructive'
+                            : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                    "
+                >
+                    <ShieldAlert class="size-4 shrink-0 mt-0.5" />
+                    <span v-if="studentToToggle?.user.is_active">
+                        This student will immediately be prevented from logging in to the student portal. Their academic records, enrollments, and attendance history will remain intact.
+                    </span>
+                    <span v-else>
+                        This student will regain login access to the student portal using their existing credentials.
+                    </span>
+                </div>
+
+                <DialogFooter class="pt-4">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="isToggleStatusModalOpen = false"
+                        :disabled="toggleStatusForm.processing"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        :variant="studentToToggle?.user.is_active ? 'destructive' : 'default'"
+                        :disabled="toggleStatusForm.processing"
+                        @click="confirmToggleStatus"
+                        class="gap-2"
+                    >
+                        <Spinner v-if="toggleStatusForm.processing" class="size-4" />
+                        <span>{{ studentToToggle?.user.is_active ? 'Deactivate Access' : 'Activate Access' }}</span>
                     </Button>
                 </DialogFooter>
             </DialogScrollContent>

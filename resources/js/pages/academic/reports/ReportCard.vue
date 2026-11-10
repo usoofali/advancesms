@@ -25,15 +25,16 @@ interface MarkItem {
     id: number;
     subject_name: string;
     subject_code: string;
-    ca1: number;
-    ca2: number;
-    ca3: number;
-    exam_score: number;
+    ca1: number | null;
+    ca2: number | null;
+    ca3: number | null;
+    exam_score: number | null;
     total_score: number;
     grade: string;
     grade_point: number;
     remark: string;
     teacher_comment: string | null;
+    is_absent?: boolean;
 }
 
 interface Props {
@@ -139,6 +140,22 @@ const tdClass = computed(() => {
     if (isDense.value) return 'py-0.5 px-1.5';
     return 'py-1 px-2';
 });
+
+const isMarkAbsent = (mark: MarkItem): boolean => {
+    if (mark.is_absent !== undefined) {
+        return Boolean(mark.is_absent);
+    }
+    const isZeroOrNull = (val: number | null | undefined) =>
+        val === null || val === undefined || Number(val) === 0;
+
+    return (
+        isZeroOrNull(mark.ca1) &&
+        isZeroOrNull(mark.ca2) &&
+        isZeroOrNull(mark.ca3) &&
+        isZeroOrNull(mark.exam_score) &&
+        isZeroOrNull(mark.total_score)
+    );
+};
 </script>
 
 <template>
@@ -284,21 +301,28 @@ const tdClass = computed(() => {
                         >
                             <td :class="tdClass" class="text-center font-mono text-muted-foreground print:text-neutral-600 text-[9px]">{{ index + 1 }}</td>
                             <td :class="tdClass" class="font-semibold text-foreground print:text-black">{{ mark.subject_name }}</td>
-                            <td :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ mark.ca1 ?? '-' }}</td>
-                            <td v-if="exam.ca_count >= 2" :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ mark.ca2 ?? '-' }}</td>
-                            <td v-if="exam.ca_count >= 3" :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ mark.ca3 ?? '-' }}</td>
-                            <td :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ mark.exam_score ?? '-' }}</td>
+                            <td :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ isMarkAbsent(mark) ? '-' : (mark.ca1 ?? '-') }}</td>
+                            <td v-if="exam.ca_count >= 2" :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ isMarkAbsent(mark) ? '-' : (mark.ca2 ?? '-') }}</td>
+                            <td v-if="exam.ca_count >= 3" :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ isMarkAbsent(mark) ? '-' : (mark.ca3 ?? '-') }}</td>
+                            <td :class="tdClass" class="text-center font-mono text-muted-foreground print:text-black">{{ isMarkAbsent(mark) ? '-' : (mark.exam_score ?? '-') }}</td>
                             <td
                                 :class="[
                                     tdClass,
                                     'text-center font-mono font-bold bg-muted/20 print:bg-neutral-100/50 text-foreground print:text-black',
-                                    mark.total_score < 50 ? 'text-rose-600 print:text-black font-black' : '',
+                                    !isMarkAbsent(mark) && mark.total_score < 50 ? 'text-rose-600 print:text-black font-black' : '',
                                 ]"
                             >
-                                {{ mark.total_score }}
+                                {{ isMarkAbsent(mark) ? 'ABS' : mark.total_score }}
                             </td>
                             <td :class="tdClass" class="text-center font-bold bg-muted/20 print:bg-neutral-100/50">
                                 <span
+                                    v-if="isMarkAbsent(mark)"
+                                    class="inline-block px-1 rounded font-bold text-neutral-600 bg-neutral-100 print:bg-transparent print:text-black"
+                                >
+                                    ABS
+                                </span>
+                                <span
+                                    v-else
                                     class="inline-block px-1 rounded font-bold"
                                     :class="{
                                         'text-emerald-700 bg-emerald-50 print:bg-transparent print:text-black': ['A', 'B'].includes(mark.grade),
@@ -311,7 +335,7 @@ const tdClass = computed(() => {
                                 </span>
                             </td>
                             <td :class="tdClass" class="text-muted-foreground print:text-neutral-800 italic text-[9.5px] print:text-[8.5px]">
-                                {{ mark.teacher_comment || mark.remark }}
+                                {{ isMarkAbsent(mark) ? 'Absent' : (mark.teacher_comment || mark.remark) }}
                             </td>
                         </tr>
 
