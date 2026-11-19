@@ -83,9 +83,9 @@ class InstallAppCommand extends Command
 
         $adminEmail = $this->option('admin-email');
         if (! $adminEmail && ! $this->option('no-interaction')) {
-            $adminEmail = $this->ask('Enter Super Admin Email', 'admin@school.test');
+            $adminEmail = $this->ask('Enter Super Admin Email', 'admin@advancesms.com');
         } elseif (! $adminEmail) {
-            $adminEmail = 'admin@school.test';
+            $adminEmail = 'admin@advancesms.com';
         }
 
         $adminPassword = $this->option('admin-password');
