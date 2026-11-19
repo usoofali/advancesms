@@ -100,7 +100,7 @@ class StandardAcademicSeeder extends Seeder
             ['username' => 'superadmin'],
             [
                 'name' => 'Super Administrator',
-                'email' => 'admin@school.test',
+                'email' => 'admin@advancesms.com',
                 'password' => Hash::make('password'),
                 'first_name' => 'System',
                 'last_name' => 'Superadmin',
